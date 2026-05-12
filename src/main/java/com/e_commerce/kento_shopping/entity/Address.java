@@ -37,6 +37,6 @@ public class Address extends BaseEntity{
     private String postalCode;
 
     @OneToOne(optional = false)
-    @JoinColumn(name = "USER_ID", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 }

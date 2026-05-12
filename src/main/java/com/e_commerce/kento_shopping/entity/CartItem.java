@@ -24,12 +24,12 @@ public class CartItem {
 
     @ManyToOne(optional = false)
     @MapsId("cartId")
-    @JoinColumn(name = "CART_ID")
+    @JoinColumn(name = "cart_id")
     private Cart cart;
 
     @ManyToOne(optional = false)
     @MapsId("productId")
-    @JoinColumn(name = "PRODUCT_ID")
+    @JoinColumn(name = "product_id")
     private Product product;
 
     @Column(nullable = false)
@@ -51,10 +51,10 @@ public class CartItem {
     @EqualsAndHashCode
     public static class Id implements Serializable {
 
-        @Column(name = "CART_ID")
+        @Column(name = "cart_id")
         private Long cartId;
 
-        @Column(name = "PRODUCT_ID")
+        @Column(name = "product_id")
         private Long productId;
     }
 }
