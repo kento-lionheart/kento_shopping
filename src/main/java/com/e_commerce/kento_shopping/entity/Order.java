@@ -8,6 +8,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.ReadWriteLock;
 
 @Entity
 @Table(name= "ORDERS")
@@ -61,7 +62,7 @@ public class Order extends BaseEntity{
     private String shipPostalCode;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "USER_ID", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     @NotNull
     private User user;
 

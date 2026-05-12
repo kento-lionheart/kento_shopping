@@ -16,6 +16,4 @@ public class Category extends BaseEntity{
     @Column(nullable = false, unique = true)
     @NotNull
     private String name;
-
-
 }
