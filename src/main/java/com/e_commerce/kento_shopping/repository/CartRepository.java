@@ -1,0 +1,11 @@
+package com.e_commerce.kento_shopping.repository;
+
+import com.e_commerce.kento_shopping.entity.Cart;
+import com.e_commerce.kento_shopping.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface CartRepository extends JpaRepository<Cart, Long> {
+    Optional<Cart> findByUser(User user);
+}
