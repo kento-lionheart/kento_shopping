@@ -2,6 +2,7 @@ package com.e_commerce.kento_shopping.exception;
 
 import com.e_commerce.kento_shopping.dto.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -42,6 +43,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(new ErrorResponse(401, ex.getMessage()));
+    }
+
+    @ExceptionHandler(AddressNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleAddressNotFound(AddressNotFoundException ex){
+        return ResponseEntity
+                .status(HttpStatusCode.valueOf(404))
+                .body(new ErrorResponse(404, ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
