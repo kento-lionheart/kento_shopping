@@ -10,8 +10,7 @@ import com.e_commerce.kento_shopping.repository.AddressRepository;
 import com.e_commerce.kento_shopping.service.AddressService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +42,7 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
+    @Transactional
     public void updateAddress(User user, AddressRequest request) {
         Address address = addressRepository.findByUser(user)
                 .orElseThrow(() -> new AddressNotFoundException("Address not found"));
@@ -51,8 +51,8 @@ public class AddressServiceImpl implements AddressService {
         address.setCity(request.getCity());
         address.setDistrict(request.getDistrict());
         address.setWard(request.getWard());
+        address.setStreet(request.getStreet());
         address.setPostalCode(request.getPostalCode());
-        address.setStreet(address.getStreet());
     }
     private AddressResponse mapToResponse(Address address){
         return new AddressResponse(
