@@ -2,7 +2,6 @@ package com.e_commerce.kento_shopping.exception;
 
 import com.e_commerce.kento_shopping.dto.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -44,11 +43,24 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(new ErrorResponse(401, ex.getMessage()));
     }
+    @ExceptionHandler(AddressAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleAddressAlreadyExists(AddressAlreadyExistsException ex){
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(409, ex.getMessage()));
+    }
+
 
     @ExceptionHandler(AddressNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleAddressNotFound(AddressNotFoundException ex){
         return ResponseEntity
-                .status(HttpStatusCode.valueOf(404))
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(404, ex.getMessage()));
+    }
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleProductNotFound(ProductNotFoundException ex){
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse(404, ex.getMessage()));
     }
 
@@ -58,4 +70,5 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse(500, "An unexpected error occurred"));
     }
+
 }

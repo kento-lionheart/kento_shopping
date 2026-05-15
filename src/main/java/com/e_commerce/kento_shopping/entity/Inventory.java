@@ -16,7 +16,7 @@ public class Inventory {
     @Id
     private Long id;
 
-    @OneToOne(optional = false)
+    @OneToOne(optional = false, fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "product_id")
     private Product product;
