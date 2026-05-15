@@ -29,4 +29,7 @@ public class Product extends BaseEntity{
     @ManyToOne(optional = false)
     @JoinColumn(name = "category_id")
     private Category category;
+
+    @OneToOne(mappedBy = "product")
+    private Inventory inventory;
 }
