@@ -30,6 +30,6 @@ public class Product extends BaseEntity{
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @OneToOne(mappedBy = "product")
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private Inventory inventory;
 }
