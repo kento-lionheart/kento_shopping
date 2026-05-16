@@ -49,7 +49,12 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse(409, ex.getMessage()));
     }
-
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCategoryNotFound(CategoryNotFoundException ex){
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(404, ex.getMessage()));
+    }
 
     @ExceptionHandler(AddressNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleAddressNotFound(AddressNotFoundException ex){
