@@ -1,28 +1,33 @@
 package com.e_commerce.kento_shopping.dto.request;
 
+import com.e_commerce.kento_shopping.enums.PaymentMethod;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-public class AddressRequest {
-    @NotBlank(message = "Recipient name is required")
+public class CheckoutRequest {
+    @NotBlank
     private String recipientName;
 
-    @NotBlank(message = "Phone is required")
+    @NotBlank
     private String phone;
 
-    @NotBlank(message = "Street is required")
+    @NotBlank
     private String street;
 
-    @NotBlank(message =  "Ward is required")
+    @NotBlank
     private String ward;
 
-    @NotBlank(message = "District is required")
+    @NotBlank
     private String district;
 
-    @NotBlank(message = "City is required")
+    @NotBlank
     private String city;
 
     private String postalCode;
+
+    @NotNull
+    private PaymentMethod paymentMethod;
 }
+
