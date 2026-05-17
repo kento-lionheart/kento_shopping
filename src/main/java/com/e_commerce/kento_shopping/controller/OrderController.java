@@ -1,6 +1,7 @@
 package com.e_commerce.kento_shopping.controller;
 
 import com.e_commerce.kento_shopping.dto.request.CheckoutRequest;
+import com.e_commerce.kento_shopping.dto.request.PaymentRequest;
 import com.e_commerce.kento_shopping.dto.response.OrderResponse;
 import com.e_commerce.kento_shopping.entity.User;
 import com.e_commerce.kento_shopping.service.OrderService;
@@ -9,10 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -24,5 +22,15 @@ public class OrderController {
     public ResponseEntity<OrderResponse> checkout(@AuthenticationPrincipal User user,
                                                  @Valid @RequestBody CheckoutRequest request){
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.checkout(user, request));
+    }
+
+    @PostMapping("/{orderId}/payment")
+    public ResponseEntity<OrderResponse> makePayment(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long orderId,
+            @Valid @RequestBody PaymentRequest request
+            ){
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(orderService.makePayment(user, orderId, request));
     }
 }

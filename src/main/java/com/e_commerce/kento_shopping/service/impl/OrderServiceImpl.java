@@ -1,6 +1,7 @@
 package com.e_commerce.kento_shopping.service.impl;
 
 import com.e_commerce.kento_shopping.dto.request.CheckoutRequest;
+import com.e_commerce.kento_shopping.dto.request.PaymentRequest;
 import com.e_commerce.kento_shopping.dto.response.OrderItemResponse;
 import com.e_commerce.kento_shopping.dto.response.OrderResponse;
 import com.e_commerce.kento_shopping.entity.*;
@@ -9,6 +10,7 @@ import com.e_commerce.kento_shopping.enums.PaymentMethod;
 import com.e_commerce.kento_shopping.enums.PaymentStatus;
 import com.e_commerce.kento_shopping.exception.CartNotFoundException;
 import com.e_commerce.kento_shopping.exception.InsufficientStockException;
+import com.e_commerce.kento_shopping.exception.OrderNotFoundException;
 import com.e_commerce.kento_shopping.repository.CartRepository;
 import com.e_commerce.kento_shopping.repository.OrderRepository;
 import com.e_commerce.kento_shopping.repository.PaymentRepository;
@@ -26,8 +28,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
-    private final PaymentRepository paymentRepository;
     private final CartRepository cartRepository;
+    private final PaymentRepository paymentRepository;
     private OrderItemResponse mapToOrderItemResponse(OrderItem orderItem){
         return new OrderItemResponse(
                 orderItem.getId(),
@@ -42,9 +44,7 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItemResponse> items = order.getItems().stream()
                 .map(this::mapToOrderItemResponse)
                 .toList();
-
-        Payment payment = order.getPayments().get(0);
-
+        Payment payment = order.getPayments().isEmpty() ? null : order.getPayments().get(0);
         return new OrderResponse(
                 order.getId(),
                 order.getStatus(),
@@ -58,9 +58,9 @@ public class OrderServiceImpl implements OrderService {
                 order.getShipDistrict(),
                 order.getShipCity(),
                 order.getShipPostalCode(),
-                payment.getStatus(),
-                payment.getMethod(),
-                payment.getTransactionId(),
+                payment != null ? payment.getStatus() : null,
+                payment != null ? payment.getMethod() : null,
+                payment != null ? payment.getTransactionId() : null,
                 items,
                 order.getCreatedAt()
         );
@@ -85,7 +85,7 @@ public class OrderServiceImpl implements OrderService {
                             cartItem.getProduct().getName() + " has insufficient stock"
                     );
                 });
-        // calculate total fee
+        // calculate total fee -> shippingFee is concrete 30k vndong baby
         BigDecimal subTotal = cart.getItems().stream()
                 .map(item -> item.getProduct().getPrice()
                         .multiply(BigDecimal.valueOf(item.getQuantity())))
@@ -121,11 +121,31 @@ public class OrderServiceImpl implements OrderService {
             Inventory inv = cartItem.getProduct().getInventory();
             inv.setQuantity(inv.getQuantity() - cartItem.getQuantity());
         }
-        //mock the paying method
+
+        cart.getItems().clear();
+        return mapToOrderResponse(order);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse makePayment(User user, Long orderId, PaymentRequest request) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+        if(!order.getUser().getId().equals(user.getId())){
+            throw new IllegalArgumentException("You do not have access to this order");
+        }
+        if(order.getStatus() != OrderStatus.PENDING){
+            throw new IllegalArgumentException("Order is not in payable state");
+        }
+        boolean alreadyPaid = order.getPayments().stream()
+                .anyMatch(p -> p.getStatus() == PaymentStatus.SUCCESS);
+        if(alreadyPaid){
+            throw new IllegalArgumentException("Order has already been paid");
+        }
         Payment payment = Payment.builder()
                 .order(order)
                 .method(request.getPaymentMethod())
-                .amount(totalAmount)
+                .amount(order.getTotalAmount())
                 .transactionId(UUID.randomUUID().toString())
                 .build();
         if (request.getPaymentMethod() == PaymentMethod.MOMO) {
@@ -135,10 +155,10 @@ public class OrderServiceImpl implements OrderService {
         } else {
             payment.setStatus(PaymentStatus.PENDING);
         }
+
         order.getPayments().add(payment);
         paymentRepository.save(payment);
 
-        cart.getItems().clear();
         return mapToOrderResponse(order);
     }
 }
