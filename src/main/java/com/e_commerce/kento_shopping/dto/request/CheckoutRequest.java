@@ -1,8 +1,6 @@
 package com.e_commerce.kento_shopping.dto.request;
 
-import com.e_commerce.kento_shopping.enums.PaymentMethod;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 @Getter
@@ -26,8 +24,5 @@ public class CheckoutRequest {
     private String city;
 
     private String postalCode;
-
-    @NotNull
-    private PaymentMethod paymentMethod;
 }
 
