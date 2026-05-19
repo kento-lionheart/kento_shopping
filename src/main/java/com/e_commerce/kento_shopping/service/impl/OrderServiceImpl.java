@@ -66,6 +66,26 @@ public class OrderServiceImpl implements OrderService {
                 order.getCreatedAt()
         );
     }
+
+    @Override
+    @Transactional
+    public OrderResponse cancelOrder(User user, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+        if(!order.getUser().getId().equals(user.getId())){
+            throw new IllegalArgumentException("You don't have access to this order !!!");
+        }
+        if(order.getStatus()!= OrderStatus.PENDING){
+            throw new IllegalArgumentException("Only pending orders can be cancelled");
+        }
+        for(OrderItem item : order.getItems()){
+            Inventory inv = item.getProduct().getInventory();
+            inv.setQuantity(inv.getQuantity() + item.getQuantity());
+        }
+        order.setStatus(OrderStatus.CANCELLED);
+        return mapToOrderResponse(order);
+    }
+
     @Override
     @Transactional
     public OrderResponse checkout(User user, CheckoutRequest request) {
