@@ -2,6 +2,8 @@ package com.e_commerce.kento_shopping.service.impl;
 
 import com.e_commerce.kento_shopping.dto.request.CheckoutRequest;
 import com.e_commerce.kento_shopping.dto.request.PaymentRequest;
+import com.e_commerce.kento_shopping.dto.request.admin.UpdateOrderStatusRequest;
+import com.e_commerce.kento_shopping.dto.response.AdminOrderSummaryResponse;
 import com.e_commerce.kento_shopping.dto.response.OrderItemResponse;
 import com.e_commerce.kento_shopping.dto.response.OrderResponse;
 import com.e_commerce.kento_shopping.dto.response.OrderSummaryResponse;
@@ -17,6 +19,8 @@ import com.e_commerce.kento_shopping.repository.OrderRepository;
 import com.e_commerce.kento_shopping.repository.PaymentRepository;
 import com.e_commerce.kento_shopping.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,6 +87,50 @@ public class OrderServiceImpl implements OrderService {
             inv.setQuantity(inv.getQuantity() + item.getQuantity());
         }
         order.setStatus(OrderStatus.CANCELLED);
+        return mapToOrderResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AdminOrderSummaryResponse> getAllOrders(String email, OrderStatus status, Pageable pageable) {
+        Page<Order> orders;
+        if(email != null && !email.isBlank()){
+            orders = orderRepository.findByUserEmailContainingIgnoreCase(email, pageable);
+        }
+        else if(status != null){
+            orders = orderRepository.findByStatus(status,pageable);
+        }
+        else {
+            orders = orderRepository.findAll(pageable);
+        }
+        return orders.map(order -> {
+            PaymentStatus paymentStatus = order.getPayments().isEmpty()
+                    ? PaymentStatus.PENDING
+                    : order.getPayments().get(0).getStatus();
+            return new AdminOrderSummaryResponse(
+                    order.getId(),
+                    order.getStatus(),
+                    order.getTotalAmount(),
+                    order.getItems().size(),
+                    paymentStatus,
+                    order.getCreatedAt(),
+                    order.getUser().getEmail()
+            );
+        });
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse updateOrderStatus(Long id, UpdateOrderStatusRequest request) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+        if (order.getStatus() == OrderStatus.DELIVERED) {
+            throw new IllegalArgumentException("Delivered orders cannot be updated");
+        }
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalArgumentException("Cancelled orders cannot be updated");
+        }
+        order.setStatus(request.getStatus());
         return mapToOrderResponse(order);
     }
 
