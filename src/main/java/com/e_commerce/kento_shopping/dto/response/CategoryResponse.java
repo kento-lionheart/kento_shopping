@@ -1,0 +1,10 @@
+package com.e_commerce.kento_shopping.dto.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
+public class CategoryResponse {
+    private String name;
+}

@@ -26,7 +26,7 @@ Kento
 |----|---------|--------|
 | UC-01 | Register account | ✅ Done |
 | UC-02 | Login with JWT | ✅ Done |
-| UC-03 | Logout | — |
+| UC-03 | Logout | ✅ Done (client-side) |
 
 ### Customer
 | UC | Feature | Status |
@@ -35,36 +35,68 @@ Kento
 | UC-05 | Browse products (paginated) | ✅ Done |
 | UC-06 | Search and filter products | ✅ Done |
 | UC-07 | View product details + stock status | ✅ Done |
-| UC-08 | Manage cart | 🔄 In progress |
-| UC-09 | Checkout and place order | — |
-| UC-10 | Make payment | — |
-| UC-11 | View order history | — |
-| UC-12 | Cancel order | — |
+| UC-08 | Manage cart | ✅ Done |
+| UC-09 | Checkout and place order | ✅ Done |
+| UC-10 | Make payment | ✅ Done |
+| UC-11 | View order history | ✅ Done |
+| UC-12 | Cancel order | ✅ Done |
 
 ### Admin
 | UC | Feature | Status |
 |----|---------|--------|
-| UC-13 | Manage products and inventory | — |
-| UC-14 | Manage orders and statuses | — |
+| UC-13 | Manage products and inventory | ✅ Done |
+| UC-14 | Manage orders and statuses | ✅ Done |
 
 ---
 
 ## API Overview
 
+### Auth
 ```
-POST   /api/v1/auth/register         Register a new account
-POST   /api/v1/auth/login            Login and receive JWT
+POST   /api/v1/auth/register                    Register a new account
+POST   /api/v1/auth/login                       Login and receive JWT
+```
 
-GET    /api/v1/addresses             Get current user's address
-POST   /api/v1/addresses             Create address
-PUT    /api/v1/addresses             Update address
+### Address
+```
+GET    /api/v1/addresses                        Get current user's address
+POST   /api/v1/addresses                        Create address
+PUT    /api/v1/addresses                        Update address
+```
 
-GET    /api/v1/products              Browse / search / filter products
-GET    /api/v1/products/{id}         View product details
+### Products
+```
+GET    /api/v1/products                         Browse / search / filter products
+GET    /api/v1/products/{id}                    View product details
+GET    /api/v1/categories                       List all categories
+```
 
-POST   /api/v1/admin/products        Create product (ADMIN)
-PUT    /api/v1/admin/products/{id}   Update product (ADMIN)
-DELETE /api/v1/admin/products/{id}   Delete product (ADMIN)
+### Cart
+```
+GET    /api/v1/cart                             View cart
+POST   /api/v1/cart/items                       Add item to cart
+PUT    /api/v1/cart/items/{productId}           Update item quantity
+DELETE /api/v1/cart/items/{productId}           Remove item from cart
+DELETE /api/v1/cart                             Clear cart
+```
+
+### Orders
+```
+POST   /api/v1/orders/checkout                  Place an order
+POST   /api/v1/orders/{orderId}/payment         Make payment for an order
+GET    /api/v1/orders                           View order history
+PATCH  /api/v1/orders/{orderId}/cancel          Cancel a pending order
+```
+
+### Admin
+```
+POST   /api/v1/admin/products                   Create product
+PUT    /api/v1/admin/products/{id}              Update product
+PUT    /api/v1/admin/products/{id}/stock        Update stock
+DELETE /api/v1/admin/products/{id}              Delete product
+
+GET    /api/v1/admin/orders                     List all orders (filter by email/status)
+PUT    /api/v1/admin/orders/{id}/status         Update order status
 ```
 
 Full interactive docs available at `/swagger-ui/index.html` when the app is running.
@@ -85,3 +117,5 @@ Full interactive docs available at `/swagger-ui/index.html` when the app is runn
 
 API is available at `http://localhost:8080`
 Swagger UI at `http://localhost:8080/swagger-ui/index.html`
+
+Sample data is seeded automatically on first run in `dev` profile — see `DataSeeder.java` for credentials.

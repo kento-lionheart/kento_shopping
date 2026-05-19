@@ -1,6 +1,8 @@
 package com.e_commerce.kento_shopping.controller;
 
+import com.e_commerce.kento_shopping.dto.response.CategoryResponse;
 import com.e_commerce.kento_shopping.dto.response.ProductResponse;
+import com.e_commerce.kento_shopping.service.CategoryService;
 import com.e_commerce.kento_shopping.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -10,11 +12,18 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
 public class ProductController {
     private final ProductService productService;
+    private final CategoryService categoryService;
+    @GetMapping("/api/v1/categories")
+    public ResponseEntity<List<CategoryResponse>> getCategories(){
+        return ResponseEntity.ok(categoryService.getAllCategories());
+    }
 
     @GetMapping
     public ResponseEntity<Page<ProductResponse>> getProducts(
