@@ -1,7 +1,7 @@
 # Kento Shopping — E-Commerce REST API
 
 A backend REST API for an e-commerce platform built with Spring Boot. Covers the full shopping flow from user registration to order placement and payment.
-
+Kento
 ---
 
 ## Tech Stack

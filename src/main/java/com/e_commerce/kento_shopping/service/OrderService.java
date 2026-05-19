@@ -12,4 +12,5 @@ public interface OrderService {
     OrderResponse checkout(User user, CheckoutRequest request);
     OrderResponse makePayment(User user, Long orderId, PaymentRequest request);
     List<OrderSummaryResponse> viewOrderHistory(User user);
+    OrderResponse cancelOrder(User user, Long orderId);
 }
