@@ -4,6 +4,7 @@ import com.e_commerce.kento_shopping.dto.request.CheckoutRequest;
 import com.e_commerce.kento_shopping.dto.request.PaymentRequest;
 import com.e_commerce.kento_shopping.dto.response.OrderItemResponse;
 import com.e_commerce.kento_shopping.dto.response.OrderResponse;
+import com.e_commerce.kento_shopping.dto.response.OrderSummaryResponse;
 import com.e_commerce.kento_shopping.entity.*;
 import com.e_commerce.kento_shopping.enums.OrderStatus;
 import com.e_commerce.kento_shopping.enums.PaymentMethod;
@@ -124,6 +125,32 @@ public class OrderServiceImpl implements OrderService {
 
         cart.getItems().clear();
         return mapToOrderResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderSummaryResponse> viewOrderHistory(User user) {
+        List<Order> orderResponse = orderRepository.findByUserOrderByCreatedAtDesc(user);
+
+        return orderResponse.stream()
+                .map(order ->{
+                    PaymentStatus paymentStatus;
+                    if(order.getPayments().isEmpty()){
+                        paymentStatus = PaymentStatus.PENDING;
+                    }
+                    else {
+                      paymentStatus = order.getPayments().get(0).getStatus();
+                    }
+                    return new OrderSummaryResponse(
+                            order.getId(),
+                            order.getStatus(),
+                            order.getTotalAmount(),
+                            order.getItems().size(),
+                            paymentStatus,
+                            order.getCreatedAt()
+                    );
+                })
+                .toList();
     }
 
     @Override
