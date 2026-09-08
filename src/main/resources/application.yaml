@@ -5,6 +5,6 @@ spring:
     active: dev
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     show-sql: true
 

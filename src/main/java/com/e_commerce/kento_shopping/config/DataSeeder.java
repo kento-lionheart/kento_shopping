@@ -35,105 +35,312 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) {
         if (userRepository.count() > 0) return;
 
+        // ----------------------------------------------------------------
         // 1. Categories
-        Category electronics = save(Category.builder().name("Electronics").build());
-        Category clothing    = save(Category.builder().name("Clothing").build());
-        Category books       = save(Category.builder().name("Books").build());
-        Category home        = save(Category.builder().name("Home & Garden").build());
-        Category sports      = save(Category.builder().name("Sports").build());
+        // ----------------------------------------------------------------
+        Category electronics = saveCategory("Electronics");
+        Category clothing    = saveCategory("Clothing");
+        Category books       = saveCategory("Books");
+        Category home        = saveCategory("Home & Garden");
+        Category sports      = saveCategory("Sports");
 
-        // 2. Products + Inventory
-        Product iphone      = seedProduct("iPhone 15 Pro",
-                "Apple flagship with A17 chip, 48MP camera, titanium build",
-                new BigDecimal("28000000"), "https://placehold.co/400x400?text=iPhone+15+Pro", electronics, 15);
-        Product nike        = seedProduct("Nike Air Max 270",
-                "Everyday running shoe with Max Air unit heel cushioning",
-                new BigDecimal("2500000"), "https://placehold.co/400x400?text=Nike+Air+Max", clothing, 30);
-        Product cleanCode   = seedProduct("Clean Code",
+        // ----------------------------------------------------------------
+        // 2. Products + Inventory  (43 total)
+        // ----------------------------------------------------------------
+
+        // — Electronics (12 products) —
+        Product iphone15Pro    = seedProduct("iPhone 15 Pro",
+                "Apple flagship with A17 Bionic chip, 48 MP main camera, titanium frame",
+                new BigDecimal("28000000"), "/images/products/electronics/iphone15pro.png",            electronics, 15);
+        Product samsungS24     = seedProduct("Samsung Galaxy S24 Ultra",
+                "200 MP camera, built-in S Pen, Snapdragon 8 Gen 3, 6.8-inch Dynamic AMOLED",
+                new BigDecimal("25000000"), "/images/products/electronics/galaxy_s24_ultra.png",       electronics, 12);
+        Product macBookPro     = seedProduct("MacBook Pro 14-inch M3",
+                "Apple M3 chip, 18-hour battery, Liquid Retina XDR display, 16 GB unified memory",
+                new BigDecimal("49000000"), "/images/products/electronics/macbook_pro_m3.png",         electronics, 8);
+        Product dellXps        = seedProduct("Dell XPS 15 OLED",
+                "Intel Core i9-14900H, OLED touch display, 32 GB DDR5 RAM, NVIDIA RTX 4060",
+                new BigDecimal("38000000"), "/images/products/electronics/dell_xps_15.png",            electronics, 6);
+        Product sonyWH1000XM5  = seedProduct("Sony WH-1000XM5",
+                "Industry-leading noise cancellation, 30-hour battery, multipoint Bluetooth pairing",
+                new BigDecimal("8500000"),  "/images/products/electronics/sony_wh1000xm5.png",         electronics, 25);
+        Product airPodsProM2   = seedProduct("AirPods Pro (2nd gen)",
+                "H2 chip, Adaptive Audio, USB-C charging case, up to 6 hours listening",
+                new BigDecimal("6200000"),  "/images/products/electronics/airpods_pro.png",            electronics, 30);
+        Product ipadAir        = seedProduct("iPad Air M2",
+                "M2 chip, 11-inch Liquid Retina display, Apple Pencil Pro compatible, 5G",
+                new BigDecimal("18000000"), "/images/products/electronics/ipad_air_m2.png",            electronics, 10);
+        Product galaxyTab      = seedProduct("Samsung Galaxy Tab S9+",
+                "12.4-inch Dynamic AMOLED 2X, Snapdragon 8 Gen 2, S Pen included, IP68",
+                new BigDecimal("19500000"), "/images/products/electronics/galaxy_tab_s9.png",          electronics, 9);
+        Product canonEosR50    = seedProduct("Canon EOS R50",
+                "24.2 MP APS-C sensor, 4K video, Dual Pixel CMOS AF II, compact mirrorless",
+                new BigDecimal("17000000"), "/images/products/electronics/canon_eos_r50.png",          electronics, 7);
+        Product sonyA7C2       = seedProduct("Sony A7C II",
+                "33 MP full-frame BSI CMOS sensor, 4K 60p video, AI-based autofocus, compact body",
+                new BigDecimal("45000000"), "/images/products/electronics/sony_a7c_ii.png",            electronics, 5);
+        Product logiMxMaster   = seedProduct("Logitech MX Master 3S",
+                "8 K DPI sensor, MagSpeed electromagnetic scroll wheel, USB-C, silent clicks",
+                new BigDecimal("2100000"),  "/images/products/electronics/mx_master_3s.png",           electronics, 40);
+        Product switchOled     = seedProduct("Nintendo Switch OLED",
+                "7-inch OLED screen, enhanced audio, 64 GB internal storage, wide adjustable stand",
+                new BigDecimal("8800000"),  "/images/products/electronics/switch_oled.png",            electronics, 18);
+
+        // — Clothing (9 products) —
+        Product nikeAirMax270  = seedProduct("Nike Air Max 270",
+                "Max Air heel unit, breathable mesh upper, perfect for all-day wear",
+                new BigDecimal("2500000"),  "/images/products/clothing/nike_air_max_270.png",          clothing, 30);
+        Product adidasUltra    = seedProduct("Adidas Ultraboost 23",
+                "Boost midsole, Primeknit+ upper, Continental rubber outsole",
+                new BigDecimal("3200000"),  "/images/products/clothing/adidas_ultraboost_23.png",      clothing, 22);
+        Product levisStraight  = seedProduct("Levi's 501 Original Straight Jeans",
+                "100% cotton denim, button fly, straight fit, timeless American icon",
+                new BigDecimal("1200000"),  "/images/products/clothing/levis_501.png",                 clothing, 50);
+        Product uniqloFleece   = seedProduct("Uniqlo Fleece Full-Zip Jacket",
+                "High-quality polyester fleece, lightweight and warm, anti-pilling treatment",
+                new BigDecimal("690000"),   "/images/products/clothing/uniqlo_fleece.png",             clothing, 60);
+        Product northFaceParka = seedProduct("The North Face Thermoball Eco Parka",
+                "PrimaLoft Eco insulation, recycled ripstop shell, water-repellent finish",
+                new BigDecimal("4500000"),  "/images/products/clothing/northface_thermoball.png",      clothing, 15);
+        Product patagoniaVest  = seedProduct("Patagonia Better Sweater Vest",
+                "Fair Trade Certified, 100% recycled polyester fleece, roomy pockets",
+                new BigDecimal("2800000"),  "/images/products/clothing/patagonia_vest.png",            clothing, 20);
+        Product converseChuck  = seedProduct("Converse Chuck Taylor All Star",
+                "Classic canvas upper, OrthoLite insole, rubber sole — an icon since 1917",
+                new BigDecimal("850000"),   "/images/products/clothing/converse_chuck.png",            clothing, 80);
+        Product nikeRunCap     = seedProduct("Nike Dri-FIT Running Cap",
+                "Sweat-wicking Dri-FIT fabric, structured 6-panel design, adjustable strap",
+                new BigDecimal("380000"),   "/images/products/clothing/nike_running_cap.png",          clothing, 100);
+        Product wovenTote      = seedProduct("Rains Tote Bag",
+                "100% waterproof welded seams, minimalist Scandinavian design, 20 L capacity",
+                new BigDecimal("1100000"),  "/images/products/clothing/rains_tote.png",                clothing, 35);
+
+        // — Books (9 products) —
+        Product cleanCode      = seedProduct("Clean Code",
                 "A Handbook of Agile Software Craftsmanship by Robert C. Martin",
-                new BigDecimal("350000"), "https://placehold.co/400x400?text=Clean+Code", books, 50);
-        Product coffeeMaker = seedProduct("Breville Coffee Maker",
-                "15-bar espresso machine with built-in grinder and milk frother",
-                new BigDecimal("1200000"), "https://placehold.co/400x400?text=Coffee+Maker", home, 20);
-        Product yogaMat     = seedProduct("Lululemon Yoga Mat",
-                "Non-slip 6mm mat with alignment lines and carrying strap",
-                new BigDecimal("450000"), "https://placehold.co/400x400?text=Yoga+Mat", sports, 40);
+                new BigDecimal("350000"),   "/images/products/books/clean_code.png",                   books, 50);
+        Product designPatterns = seedProduct("Design Patterns: GoF",
+                "Elements of Reusable Object-Oriented Software by the Gang of Four",
+                new BigDecimal("420000"),   "/images/products/books/design_patterns_gof.png",          books, 40);
+        Product dddBook        = seedProduct("Domain-Driven Design",
+                "Tackling Complexity in the Heart of Software by Eric Evans",
+                new BigDecimal("390000"),   "/images/products/books/domain_driven_design.png",         books, 35);
+        Product pragmaticProg  = seedProduct("The Pragmatic Programmer",
+                "Your Journey to Mastery by David Thomas & Andrew Hunt, 20th Anniversary Edition",
+                new BigDecimal("310000"),   "/images/products/books/pragmatic_programmer.png",         books, 45);
+        Product atomicHabits   = seedProduct("Atomic Habits",
+                "An Easy & Proven Way to Build Good Habits & Break Bad Ones by James Clear",
+                new BigDecimal("185000"),   "/images/products/books/atomic_habits.png",                books, 70);
+        Product deepWork       = seedProduct("Deep Work",
+                "Rules for Focused Success in a Distracted World by Cal Newport",
+                new BigDecimal("160000"),   "/images/products/books/deep_work.png",                    books, 60);
+        Product thinkingFast   = seedProduct("Thinking, Fast and Slow",
+                "Daniel Kahneman explores two systems that drive the way we think",
+                new BigDecimal("220000"),   "/images/products/books/thinking_fast_slow.png",           books, 55);
+        Product zeroToOne      = seedProduct("Zero to One",
+                "Notes on Startups, or How to Build the Future by Peter Thiel",
+                new BigDecimal("175000"),   "/images/products/books/zero_to_one.png",                  books, 65);
+        Product sicp           = seedProduct("Structure and Interpretation of Computer Programs",
+                "MIT's legendary CS textbook by Abelson & Sussman — 2nd Edition",
+                new BigDecimal("480000"),   "/images/products/books/sicp.png",                         books, 25);
 
-        // 3. Users
+        // — Home & Garden (7 products) —
+        Product coffeeMaker    = seedProduct("Breville Barista Express",
+                "15-bar espresso machine with built-in conical burr grinder and milk frother",
+                new BigDecimal("12000000"), "/images/products/home/breville_barista.png",              home, 10);
+        Product dysonV15       = seedProduct("Dyson V15 Detect",
+                "Laser dust detection, 60-min runtime, HEPA filtration, LCD screen",
+                new BigDecimal("11500000"), "/images/products/home/dyson_v15.png",                     home, 8);
+        Product philipsHue     = seedProduct("Philips Hue Starter Kit (4 bulbs)",
+                "16 million colors, voice control, works with Alexa / Google Home / Siri",
+                new BigDecimal("2400000"),  "/images/products/home/philips_hue_kit.png",               home, 20);
+        Product instantPot     = seedProduct("Instant Pot Duo 7-in-1",
+                "Pressure cooker, slow cooker, rice cooker, steamer, sauté, yogurt maker, warmer",
+                new BigDecimal("1900000"),  "/images/products/home/instant_pot.png",                   home, 25);
+        Product nespressoVirtuo = seedProduct("Nespresso Vertuo Pop",
+                "Centrifusion technology, 4 cup sizes, 30-sec heat-up, recyclable pods",
+                new BigDecimal("2700000"),  "/images/products/home/nespresso_vertuo.png",              home, 18);
+        Product aiPurifier     = seedProduct("Levoit Core 300 Air Purifier",
+                "True HEPA, 3-stage filtration, whisper-quiet 24 dB, covers 219 sq ft",
+                new BigDecimal("1800000"),  "/images/products/home/levoit_core300.png",                home, 22);
+        Product bambooBedding  = seedProduct("Ettitude Bamboo Lyocell Sheet Set",
+                "Cooling, ultra-soft bamboo lyocell, 300TC, OEKO-TEX certified, Queen",
+                new BigDecimal("1600000"),  "/images/products/home/bamboo_bedding.png",                home, 30);
+
+        // — Sports (6 products) —
+        Product yogaMat        = seedProduct("Lululemon The Mat 5mm",
+                "Non-slip, antimicrobial top layer, 5mm cushioning, alignment lines, carrying strap",
+                new BigDecimal("1500000"),  "/images/products/sports/lululemon_mat.png",               sports, 40);
+        Product garminForerunner = seedProduct("Garmin Forerunner 265",
+                "AMOLED display, training readiness, 13-day battery, multi-sport GPS watch",
+                new BigDecimal("9800000"),  "/images/products/sports/garmin_forerunner_265.png",       sports, 15);
+        Product hypericeNordic  = seedProduct("Hyperice Hypervolt 2 Pro",
+                "90W motor, QuietGlide technology, 5 attachments, pressure sensor, Bluetooth",
+                new BigDecimal("5200000"),  "/images/products/sports/hypervolt_2_pro.png",             sports, 12);
+        Product kettlebell      = seedProduct("Rogue Kettlebell 16 kg",
+                "Single-cast iron, E-coat finish, color-coded handles per IWF standard",
+                new BigDecimal("750000"),   "/images/products/sports/rogue_kettlebell_16kg.png",       sports, 35);
+        Product resistanceBands = seedProduct("WODFitters Pull-Up Resistance Bands Set",
+                "Natural latex, 5 bands (10–175 lb), includes carrying bag and door anchor",
+                new BigDecimal("420000"),   "/images/products/sports/wodfit_resistance_bands.png",     sports, 60);
+        Product swimGoggles     = seedProduct("Speedo Biofuse 2.0 Goggles",
+                "Anti-fog, UV protection, soft silicone frame, dual-strap, fits all face shapes",
+                new BigDecimal("280000"),   "/images/products/sports/speedo_biofuse.png",              sports, 50);
+
+        // ----------------------------------------------------------------
+        // 3. Users  (1 admin + 10 customers)
+        // ----------------------------------------------------------------
         String pw = passwordEncoder.encode("Kiet123456");
+
         userRepository.save(User.builder()
                 .email("admin@kento.com").password(pw)
                 .fullName("Kento Admin").phoneNumber("0900000000").role(Role.ADMIN).build());
 
-        User an    = userRepository.save(User.builder().email("nguyen.van.an@gmail.com").password(pw)
-                .fullName("Nguyen Van An").phoneNumber("0901111111").role(Role.CUSTOMER).build());
-        User binh  = userRepository.save(User.builder().email("tran.thi.binh@gmail.com").password(pw)
-                .fullName("Tran Thi Binh").phoneNumber("0902222222").role(Role.CUSTOMER).build());
-        User cuong = userRepository.save(User.builder().email("le.van.cuong@gmail.com").password(pw)
-                .fullName("Le Van Cuong").phoneNumber("0903333333").role(Role.CUSTOMER).build());
-        User dung  = userRepository.save(User.builder().email("pham.thi.dung@gmail.com").password(pw)
-                .fullName("Pham Thi Dung").phoneNumber("0904444444").role(Role.CUSTOMER).build());
-        User em    = userRepository.save(User.builder().email("hoang.van.em@gmail.com").password(pw)
-                .fullName("Hoang Van Em").phoneNumber("0905555555").role(Role.CUSTOMER).build());
+        // Original 5 customers
+        User an    = saveCustomer("nguyen.van.an@gmail.com",    "Nguyen Van An",    "0901111111", pw);
+        User binh  = saveCustomer("tran.thi.binh@gmail.com",   "Tran Thi Binh",   "0902222222", pw);
+        User cuong = saveCustomer("le.van.cuong@gmail.com",     "Le Van Cuong",     "0903333333", pw);
+        User dung  = saveCustomer("pham.thi.dung@gmail.com",   "Pham Thi Dung",   "0904444444", pw);
+        User em    = saveCustomer("hoang.van.em@gmail.com",     "Hoang Van Em",     "0905555555", pw);
 
+        // 5 additional customers
+        User phuong = saveCustomer("nguyen.thi.phuong@gmail.com", "Nguyen Thi Phuong", "0906666666", pw);
+        User giang  = saveCustomer("do.minh.giang@gmail.com",     "Do Minh Giang",     "0907777777", pw);
+        User hoa    = saveCustomer("vu.thi.hoa@gmail.com",        "Vu Thi Hoa",        "0908888888", pw);
+        User khanh  = saveCustomer("bui.van.khanh@gmail.com",     "Bui Van Khanh",     "0909999999", pw);
+        User linh   = saveCustomer("dang.thi.linh@gmail.com",     "Dang Thi Linh",     "0911111111", pw);
+
+        // ----------------------------------------------------------------
         // 4. Addresses
-        addressRepository.save(Address.builder().user(an).recipientName("Nguyen Van An")
-                .phone("0901111111").street("123 Nguyen Hue").ward("Ben Nghe")
-                .district("District 1").city("Ho Chi Minh").build());
-        addressRepository.save(Address.builder().user(binh).recipientName("Tran Thi Binh")
-                .phone("0902222222").street("456 Le Loi").ward("Ben Thanh")
-                .district("District 1").city("Ho Chi Minh").build());
-        addressRepository.save(Address.builder().user(cuong).recipientName("Le Van Cuong")
-                .phone("0903333333").street("789 Tran Hung Dao").ward("Cau Kho")
-                .district("District 1").city("Ho Chi Minh").build());
-        addressRepository.save(Address.builder().user(dung).recipientName("Pham Thi Dung")
-                .phone("0904444444").street("12 Hai Ba Trung").ward("Da Kao")
-                .district("District 1").city("Ho Chi Minh").build());
-        addressRepository.save(Address.builder().user(em).recipientName("Hoang Van Em")
-                .phone("0905555555").street("34 Vo Van Tan").ward("Vo Thi Sau")
-                .district("District 3").city("Ho Chi Minh").build());
+        // ----------------------------------------------------------------
+        saveAddress(an,     "Nguyen Van An",    "0901111111", "123 Nguyen Hue",       "Ben Nghe",      "District 1", "Ho Chi Minh", "700000");
+        saveAddress(binh,   "Tran Thi Binh",   "0902222222", "456 Le Loi",           "Ben Thanh",     "District 1", "Ho Chi Minh", "700000");
+        saveAddress(cuong,  "Le Van Cuong",     "0903333333", "789 Tran Hung Dao",    "Cau Kho",       "District 1", "Ho Chi Minh", "700000");
+        saveAddress(dung,   "Pham Thi Dung",   "0904444444", "12 Hai Ba Trung",      "Da Kao",        "District 1", "Ho Chi Minh", "700000");
+        saveAddress(em,     "Hoang Van Em",     "0905555555", "34 Vo Van Tan",        "Vo Thi Sau",    "District 3", "Ho Chi Minh", "700000");
+        saveAddress(phuong, "Nguyen Thi Phuong","0906666666", "88 Dien Bien Phu",     "Da Kao",        "District 3", "Ho Chi Minh", "700000");
+        saveAddress(giang,  "Do Minh Giang",   "0907777777", "15 Nguyen Dinh Chieu", "Da Kao",        "District 3", "Ho Chi Minh", "700000");
+        saveAddress(hoa,    "Vu Thi Hoa",       "0908888888", "200 Cach Mang Thang 8","Phuong 4",      "District 3", "Ho Chi Minh", "700000");
+        saveAddress(khanh,  "Bui Van Khanh",    "0909999999", "90 Nam Ky Khoi Nghia", "Ben Nghe",      "District 1", "Ho Chi Minh", "700000");
+        saveAddress(linh,   "Dang Thi Linh",    "0911111111", "55 Ly Tu Trong",       "Ben Nghe",      "District 1", "Ho Chi Minh", "700000");
 
-        // 5. Active carts (an and binh are still browsing)
+        // ----------------------------------------------------------------
+        // 5. Active carts  (4 users still browsing)
+        // ----------------------------------------------------------------
+        // an: browsing electronics + books
         Cart cartAn = cartRepository.save(Cart.builder().user(an).build());
-        cartAn.getItems().add(CartItem.builder()
-                .id(new CartItem.Id(cartAn.getId(), iphone.getId()))
-                .cart(cartAn).product(iphone).quantity(1).build());
-        cartAn.getItems().add(CartItem.builder()
-                .id(new CartItem.Id(cartAn.getId(), cleanCode.getId()))
-                .cart(cartAn).product(cleanCode).quantity(2).build());
+        addCartItem(cartAn, iphone15Pro, 1);
+        addCartItem(cartAn, cleanCode, 2);
+        addCartItem(cartAn, logiMxMaster, 1);
 
+        // binh: browsing clothing + sports
         Cart cartBinh = cartRepository.save(Cart.builder().user(binh).build());
-        cartBinh.getItems().add(CartItem.builder()
-                .id(new CartItem.Id(cartBinh.getId(), nike.getId()))
-                .cart(cartBinh).product(nike).quantity(1).build());
-        cartBinh.getItems().add(CartItem.builder()
-                .id(new CartItem.Id(cartBinh.getId(), yogaMat.getId()))
-                .cart(cartBinh).product(yogaMat).quantity(3).build());
+        addCartItem(cartBinh, nikeAirMax270, 1);
+        addCartItem(cartBinh, yogaMat, 3);
+        addCartItem(cartBinh, adidasUltra, 1);
 
-        // 6. Completed orders
-        seedOrder(cuong, "Le Van Cuong", "0903333333",
-                List.of(iphone), List.of(1),
+        // phuong: browsing home + books
+        Cart cartPhuong = cartRepository.save(Cart.builder().user(phuong).build());
+        addCartItem(cartPhuong, coffeeMaker, 1);
+        addCartItem(cartPhuong, atomicHabits, 2);
+        addCartItem(cartPhuong, nespressoVirtuo, 1);
+
+        // khanh: browsing electronics
+        Cart cartKhanh = cartRepository.save(Cart.builder().user(khanh).build());
+        addCartItem(cartKhanh, samsungS24, 1);
+        addCartItem(cartKhanh, sonyWH1000XM5, 1);
+
+        // ----------------------------------------------------------------
+        // 6. Orders  (varied statuses and payment methods)
+        // ----------------------------------------------------------------
+        // cuong — paid iPhone
+        seedOrder(cuong, "Le Van Cuong", "0903333333", "789 Tran Hung Dao", "Cau Kho", "District 1",
+                List.of(iphone15Pro), List.of(1),
                 PaymentMethod.MOMO, OrderStatus.PAID, PaymentStatus.SUCCESS);
 
-        seedOrder(dung, "Pham Thi Dung", "0904444444",
-                List.of(nike, cleanCode), List.of(2, 1),
+        // dung — pending COD order (Nike + Clean Code)
+        seedOrder(dung, "Pham Thi Dung", "0904444444", "12 Hai Ba Trung", "Da Kao", "District 1",
+                List.of(nikeAirMax270, cleanCode), List.of(2, 1),
                 PaymentMethod.COD, OrderStatus.PENDING, PaymentStatus.PENDING);
 
-        seedOrder(em, "Hoang Van Em", "0905555555",
+        // em — pending bank transfer (coffeeMaker + yogaMat)
+        seedOrder(em, "Hoang Van Em", "0905555555", "34 Vo Van Tan", "Vo Thi Sau", "District 3",
                 List.of(coffeeMaker, yogaMat), List.of(1, 2),
                 PaymentMethod.BANK_TRANSFER, OrderStatus.PENDING, PaymentStatus.PENDING);
 
-        seedOrder(an, "Nguyen Van An", "0901111111",
+        // an — paid books order
+        seedOrder(an, "Nguyen Van An", "0901111111", "123 Nguyen Hue", "Ben Nghe", "District 1",
                 List.of(cleanCode), List.of(3),
                 PaymentMethod.MOMO, OrderStatus.PAID, PaymentStatus.SUCCESS);
 
-        seedOrder(binh, "Tran Thi Binh", "0902222222",
-                List.of(iphone, nike), List.of(1, 1),
+        // binh — shipped iPhone + Nike
+        seedOrder(binh, "Tran Thi Binh", "0902222222", "456 Le Loi", "Ben Thanh", "District 1",
+                List.of(iphone15Pro, nikeAirMax270), List.of(1, 1),
                 PaymentMethod.MOMO, OrderStatus.SHIPPED, PaymentStatus.SUCCESS);
+
+        // giang — delivered MacBook
+        seedOrder(giang, "Do Minh Giang", "0907777777", "15 Nguyen Dinh Chieu", "Da Kao", "District 3",
+                List.of(macBookPro), List.of(1),
+                PaymentMethod.BANK_TRANSFER, OrderStatus.DELIVERED, PaymentStatus.SUCCESS);
+
+        // hoa — paid headphones + air purifier
+        seedOrder(hoa, "Vu Thi Hoa", "0908888888", "200 Cach Mang Thang 8", "Phuong 4", "District 3",
+                List.of(sonyWH1000XM5, aiPurifier), List.of(1, 1),
+                PaymentMethod.MOMO, OrderStatus.PAID, PaymentStatus.SUCCESS);
+
+        // linh — shipped Garmin watch
+        seedOrder(linh, "Dang Thi Linh", "0911111111", "55 Ly Tu Trong", "Ben Nghe", "District 1",
+                List.of(garminForerunner), List.of(1),
+                PaymentMethod.MOMO, OrderStatus.SHIPPED, PaymentStatus.SUCCESS);
+
+        // khanh — pending order with multiple items
+        seedOrder(khanh, "Bui Van Khanh", "0909999999", "90 Nam Ky Khoi Nghia", "Ben Nghe", "District 1",
+                List.of(dellXps, designPatterns, resistanceBands), List.of(1, 1, 2),
+                PaymentMethod.BANK_TRANSFER, OrderStatus.PENDING, PaymentStatus.PENDING);
+
+        // phuong — delivered home + sports bundle
+        seedOrder(phuong, "Nguyen Thi Phuong", "0906666666", "88 Dien Bien Phu", "Da Kao", "District 3",
+                List.of(instantPot, kettlebell, yogaMat), List.of(1, 2, 1),
+                PaymentMethod.COD, OrderStatus.DELIVERED, PaymentStatus.SUCCESS);
+
+        // an — 2nd order: electronics accessories
+        seedOrder(an, "Nguyen Van An", "0901111111", "123 Nguyen Hue", "Ben Nghe", "District 1",
+                List.of(airPodsProM2, logiMxMaster), List.of(1, 1),
+                PaymentMethod.MOMO, OrderStatus.DELIVERED, PaymentStatus.SUCCESS);
+
+        // binh — cancelled order
+        seedOrder(binh, "Tran Thi Binh", "0902222222", "456 Le Loi", "Ben Thanh", "District 1",
+                List.of(canonEosR50), List.of(1),
+                PaymentMethod.BANK_TRANSFER, OrderStatus.CANCELLED, PaymentStatus.PENDING);
+
+        // em — 2nd order: books + sports
+        seedOrder(em, "Hoang Van Em", "0905555555", "34 Vo Van Tan", "Vo Thi Sau", "District 3",
+                List.of(atomicHabits, deepWork, resistanceBands), List.of(1, 1, 1),
+                PaymentMethod.MOMO, OrderStatus.PAID, PaymentStatus.SUCCESS);
     }
 
-    private Category save(Category category) {
-        return categoryRepository.save(category);
+    // ----------------------------------------------------------------
+    // Helper methods
+    // ----------------------------------------------------------------
+
+    private Category saveCategory(String name) {
+        return categoryRepository.save(Category.builder().name(name).build());
+    }
+
+    private User saveCustomer(String email, String fullName, String phone, String encodedPw) {
+        return userRepository.save(User.builder()
+                .email(email).password(encodedPw)
+                .fullName(fullName).phoneNumber(phone)
+                .role(Role.CUSTOMER).build());
+    }
+
+    private void saveAddress(User user, String recipientName, String phone,
+                              String street, String ward, String district,
+                              String city, String postalCode) {
+        addressRepository.save(Address.builder()
+                .user(user).recipientName(recipientName).phone(phone)
+                .street(street).ward(ward).district(district)
+                .city(city).postalCode(postalCode).build());
     }
 
     private Product seedProduct(String name, String desc, BigDecimal price,
@@ -145,7 +352,14 @@ public class DataSeeder implements CommandLineRunner {
         return product;
     }
 
+    private void addCartItem(Cart cart, Product product, int quantity) {
+        cart.getItems().add(CartItem.builder()
+                .id(new CartItem.Id(cart.getId(), product.getId()))
+                .cart(cart).product(product).quantity(quantity).build());
+    }
+
     private void seedOrder(User user, String recipientName, String phone,
+                           String street, String ward, String district,
                            List<Product> products, List<Integer> quantities,
                            PaymentMethod method, OrderStatus orderStatus, PaymentStatus paymentStatus) {
         BigDecimal subtotal = BigDecimal.ZERO;
@@ -160,8 +374,8 @@ public class DataSeeder implements CommandLineRunner {
                 .user(user).subtotal(subtotal).shippingFee(shippingFee).totalAmount(total)
                 .status(orderStatus)
                 .shipRecipientName(recipientName).shipPhone(phone)
-                .shipStreet("123 Sample Street").shipWard("Sample Ward")
-                .shipDistrict("District 1").shipCity("Ho Chi Minh")
+                .shipStreet(street).shipWard(ward)
+                .shipDistrict(district).shipCity("Ho Chi Minh")
                 .build());
 
         for (int i = 0; i < products.size(); i++) {

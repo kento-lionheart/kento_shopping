@@ -6,7 +6,6 @@ import com.e_commerce.kento_shopping.dto.request.admin.ProductRequest;
 import com.e_commerce.kento_shopping.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

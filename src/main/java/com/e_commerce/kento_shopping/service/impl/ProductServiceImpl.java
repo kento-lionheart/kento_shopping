@@ -7,10 +7,12 @@ import com.e_commerce.kento_shopping.dto.response.ProductResponse;
 import com.e_commerce.kento_shopping.entity.Category;
 import com.e_commerce.kento_shopping.entity.Inventory;
 import com.e_commerce.kento_shopping.entity.Product;
+import com.e_commerce.kento_shopping.enums.OrderStatus;
 import com.e_commerce.kento_shopping.exception.CategoryNotFoundException;
 import com.e_commerce.kento_shopping.exception.ProductNotFoundException;
 import com.e_commerce.kento_shopping.repository.CategoryRepository;
 import com.e_commerce.kento_shopping.repository.InventoryRepository;
+import com.e_commerce.kento_shopping.repository.OrderItemRepository;
 import com.e_commerce.kento_shopping.repository.ProductRepository;
 import com.e_commerce.kento_shopping.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -30,14 +31,18 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final InventoryRepository inventoryRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Override
     @Transactional
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found"));
-//        inventoryRepository.findByProduct(product)
-//                .ifPresent(inventoryRepository::delete);
+        boolean hasActiveOrders = orderItemRepository.existsByProductAndOrderStatusIn(
+                product, List.of(OrderStatus.PENDING, OrderStatus.PAID, OrderStatus.SHIPPED));
+        if (hasActiveOrders) {
+            throw new IllegalArgumentException("Cannot delete product with active orders");
+        }
         productRepository.delete(product);
     }
 

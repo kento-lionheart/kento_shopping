@@ -16,7 +16,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private CategoryResponse mapToResponse(Category category){
         return new CategoryResponse(
-                category.getName()
+                category.getId(), category.getName()
         );
     }
     @Override

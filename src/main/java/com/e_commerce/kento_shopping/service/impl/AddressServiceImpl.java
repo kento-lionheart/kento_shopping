@@ -24,6 +24,7 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
+    @Transactional
     public void createAddress(User user, AddressRequest request) {
         if(addressRepository.existsByUser(user)){
             throw new AddressAlreadyExistsException("The address is existed for this user");
