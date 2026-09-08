@@ -39,8 +39,7 @@ public class OrderController {
             @PathVariable Long orderId,
             @Valid @RequestBody PaymentRequest request
             ){
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(orderService.makePayment(user, orderId, request));
+        return ResponseEntity.ok(orderService.makePayment(user, orderId, request));
     }
 
     @PatchMapping("/{orderId}/cancel")
