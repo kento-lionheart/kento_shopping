@@ -46,6 +46,21 @@ Kento
 |----|---------|--------|
 | UC-13 | Manage products and inventory | ✅ Done |
 | UC-14 | Manage orders and statuses | ✅ Done |
+| UC-15 | Manage roles and permissions | ✅ Done |
+
+### Access control
+
+Permission-based RBAC. `User` → many `Role` → many `Permission`, enforced with `@PreAuthorize` on permissions rather than roles.
+
+| Role | Scope |
+|------|-------|
+| `CUSTOMER` | Shops. Holds no permissions — access comes from authentication plus ownership |
+| `PRODUCT_STAFF` | Catalogue and stock |
+| `ORDER_STAFF` | Fulfilment and support; can read every wallet, can mint no coins |
+| `FLASHSALE_MANAGER` | Campaigns; needs catalogue write access because activating a sale carves stock out of inventory |
+| `ADMIN` | Everything — and the only role that cannot shop |
+
+Admins and staff are barred from cart, orders and addresses: an account that can approve coin top-ups must never be able to spend them. Staff who also shop hold two roles.
 
 ---
 
@@ -54,7 +69,8 @@ Kento
 ### Auth
 ```
 POST   /api/v1/auth/register                    Register a new account
-POST   /api/v1/auth/login                       Login and receive JWT
+POST   /api/v1/auth/login                       Login — returns JWT, roles and permissions
+GET    /api/v1/auth/me                          Re-read own identity and authorities
 ```
 
 ### Address
@@ -97,7 +113,17 @@ DELETE /api/v1/admin/products/{id}              Delete product
 
 GET    /api/v1/admin/orders                     List all orders (filter by email/status)
 PUT    /api/v1/admin/orders/{id}/status         Update order status
+
+GET    /api/v1/admin/users                      List users and their roles
+GET    /api/v1/admin/users/{id}                 View one user
+PUT    /api/v1/admin/users/{id}/roles           Replace a user's roles
+GET    /api/v1/admin/roles                      List roles
+POST   /api/v1/admin/roles                      Compose a new role
+PUT    /api/v1/admin/roles/{id}/permissions     Edit what a role grants
+GET    /api/v1/admin/permissions                The permission catalogue (read-only)
 ```
+
+Each admin endpoint requires a specific permission, not merely an admin role — see the matrix in the design docs.
 
 Full interactive docs available at `/swagger-ui/index.html` when the app is running.
 

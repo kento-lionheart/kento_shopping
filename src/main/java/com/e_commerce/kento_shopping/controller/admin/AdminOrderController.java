@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,6 +21,7 @@ public class AdminOrderController {
     private final OrderService orderService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('ORDER_READ_ALL')")
     public ResponseEntity<Page<AdminOrderSummaryResponse>> getAllOrders(
             @RequestParam(required = false) String email,
             @RequestParam(required = false) OrderStatus status,
@@ -30,6 +32,7 @@ public class AdminOrderController {
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasAuthority('ORDER_UPDATE_STATUS')")
     public ResponseEntity<OrderResponse> updateOrderStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateOrderStatusRequest request

@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,24 +18,30 @@ public class AdminProductController {
     private final ProductService productService;
 
     @PostMapping
+    @PreAuthorize("hasAuthority('PRODUCT_CREATE')")
     public ResponseEntity<Void> createProduct(@Valid @RequestBody ProductCreateRequest request){
         productService.createProduct(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
     public ResponseEntity<Void> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest request){
         productService.updateProduct(id, request);
         return ResponseEntity.ok().build();
     }
 
+    // Separate from PRODUCT_UPDATE: restocking is a warehouse action, editing
+    // price and description is a merchandising one.
     @PutMapping("/{id}/stock")
+    @PreAuthorize("hasAuthority('INVENTORY_UPDATE')")
     public ResponseEntity<Void> updateStock(@PathVariable Long id, @Valid @RequestBody StockRequest request){
         productService.updateStock(id, request);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('PRODUCT_DELETE')")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id){
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
