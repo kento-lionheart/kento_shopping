@@ -42,8 +42,6 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/categories").permitAll()
-
-                // More specific than the /auth/** rule below, so it must come first.
                 .requestMatchers("/api/v1/auth/me").authenticated()
                 .requestMatchers("/api/v1/auth/**").permitAll()
 
