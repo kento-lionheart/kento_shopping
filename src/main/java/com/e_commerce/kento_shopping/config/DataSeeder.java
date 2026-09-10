@@ -12,8 +12,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -21,6 +27,8 @@ import java.util.UUID;
 public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final InventoryRepository inventoryRepository;
@@ -188,27 +196,73 @@ public class DataSeeder implements CommandLineRunner {
                 new BigDecimal("280000"),   "/images/products/sports/speedo_biofuse.png",              sports, 50);
 
         // ----------------------------------------------------------------
-        // 3. Users  (1 admin + 10 customers)
+        // 3. Permissions — the closed set, seeded from the enum
+        // ----------------------------------------------------------------
+        Map<PermissionName, Permission> perms = new EnumMap<>(PermissionName.class);
+        for (PermissionName name : PermissionName.values()) {
+            perms.put(name, permissionRepository.save(Permission.builder()
+                    .name(name.name())
+                    .description(name.getDescription())
+                    .build()));
+        }
+
+        // ----------------------------------------------------------------
+        // 4. Roles — open set, composed from permissions
+        // ----------------------------------------------------------------
+        Role customerRole = saveRole("CUSTOMER",
+                "Shops, holds a wallet, owns their own orders. Holds no permissions — "
+                        + "their access comes from authentication plus ownership.",
+                perms);
+
+        Role productStaff = saveRole("PRODUCT_STAFF",
+                "Manages the catalogue and stock levels.", perms,
+                PermissionName.PRODUCT_CREATE, PermissionName.PRODUCT_UPDATE,
+                PermissionName.PRODUCT_DELETE, PermissionName.INVENTORY_UPDATE,
+                PermissionName.CATEGORY_MANAGE, PermissionName.FLASHSALE_READ_ALL);
+
+        Role orderStaff = saveRole("ORDER_STAFF",
+                "Handles orders and customer support. Can see every coin, can mint none.", perms,
+                PermissionName.ORDER_READ_ALL, PermissionName.ORDER_UPDATE_STATUS,
+                PermissionName.ORDER_CANCEL_ANY, PermissionName.USER_READ,
+                PermissionName.TOPUP_READ_ALL, PermissionName.WALLET_READ_ALL);
+
+        Role flashSaleManager = saveRole("FLASHSALE_MANAGER",
+                "Builds and runs flash sales. Needs catalogue write access because "
+                        + "activating a sale carves stock out of inventory.", perms,
+                PermissionName.PRODUCT_UPDATE, PermissionName.INVENTORY_UPDATE,
+                PermissionName.FLASHSALE_READ_ALL, PermissionName.FLASHSALE_CREATE,
+                PermissionName.FLASHSALE_UPDATE, PermissionName.FLASHSALE_ACTIVATE);
+
+        Role adminRole = saveRole("ADMIN",
+                "Everything. Cannot shop — separation of duties.", perms,
+                PermissionName.values());
+
+        // ----------------------------------------------------------------
+        // 5. Users  (1 admin + 3 staff + 10 customers)
         // ----------------------------------------------------------------
         String pw = passwordEncoder.encode("Kiet123456");
 
-        userRepository.save(User.builder()
-                .email("admin@kento.com").password(pw)
-                .fullName("Kento Admin").phoneNumber("0900000000").role(Role.ADMIN).build());
+        // Admins and staff get no cart and no wallet: they cannot shop.
+        saveUser("admin@kento.com",         "Kento Admin",        "0900000000", pw, adminRole);
+        saveUser("product.staff@kento.com", "Product Staff",      "0900000001", pw, productStaff);
+        saveUser("order.staff@kento.com",   "Order Staff",        "0900000002", pw, orderStaff);
+        saveUser("flashsale@kento.com",     "Flash Sale Manager", "0900000003", pw, flashSaleManager);
 
-        // Original 5 customers
-        User an    = saveCustomer("nguyen.van.an@gmail.com",    "Nguyen Van An",    "0901111111", pw);
-        User binh  = saveCustomer("tran.thi.binh@gmail.com",   "Tran Thi Binh",   "0902222222", pw);
-        User cuong = saveCustomer("le.van.cuong@gmail.com",     "Le Van Cuong",     "0903333333", pw);
-        User dung  = saveCustomer("pham.thi.dung@gmail.com",   "Pham Thi Dung",   "0904444444", pw);
-        User em    = saveCustomer("hoang.van.em@gmail.com",     "Hoang Van Em",     "0905555555", pw);
+        // Deliberate fixture: a user holding two roles. This is the case a
+        // careless getAuthorities() flattening gets wrong.
+        User an    = saveUser("nguyen.van.an@gmail.com",    "Nguyen Van An",    "0901111111", pw,
+                customerRole, orderStaff);
 
-        // 5 additional customers
-        User phuong = saveCustomer("nguyen.thi.phuong@gmail.com", "Nguyen Thi Phuong", "0906666666", pw);
-        User giang  = saveCustomer("do.minh.giang@gmail.com",     "Do Minh Giang",     "0907777777", pw);
-        User hoa    = saveCustomer("vu.thi.hoa@gmail.com",        "Vu Thi Hoa",        "0908888888", pw);
-        User khanh  = saveCustomer("bui.van.khanh@gmail.com",     "Bui Van Khanh",     "0909999999", pw);
-        User linh   = saveCustomer("dang.thi.linh@gmail.com",     "Dang Thi Linh",     "0911111111", pw);
+        User binh  = saveUser("tran.thi.binh@gmail.com",   "Tran Thi Binh",   "0902222222", pw, customerRole);
+        User cuong = saveUser("le.van.cuong@gmail.com",     "Le Van Cuong",     "0903333333", pw, customerRole);
+        User dung  = saveUser("pham.thi.dung@gmail.com",   "Pham Thi Dung",   "0904444444", pw, customerRole);
+        User em    = saveUser("hoang.van.em@gmail.com",     "Hoang Van Em",     "0905555555", pw, customerRole);
+
+        User phuong = saveUser("nguyen.thi.phuong@gmail.com", "Nguyen Thi Phuong", "0906666666", pw, customerRole);
+        User giang  = saveUser("do.minh.giang@gmail.com",     "Do Minh Giang",     "0907777777", pw, customerRole);
+        User hoa    = saveUser("vu.thi.hoa@gmail.com",        "Vu Thi Hoa",        "0908888888", pw, customerRole);
+        User khanh  = saveUser("bui.van.khanh@gmail.com",     "Bui Van Khanh",     "0909999999", pw, customerRole);
+        User linh   = saveUser("dang.thi.linh@gmail.com",     "Dang Thi Linh",     "0911111111", pw, customerRole);
 
         // ----------------------------------------------------------------
         // 4. Addresses
@@ -327,11 +381,24 @@ public class DataSeeder implements CommandLineRunner {
         return categoryRepository.save(Category.builder().name(name).build());
     }
 
-    private User saveCustomer(String email, String fullName, String phone, String encodedPw) {
+    private Role saveRole(String name, String description,
+                          Map<PermissionName, Permission> catalogue,
+                          PermissionName... granted) {
+        Set<Permission> permissions = Arrays.stream(granted)
+                .map(catalogue::get)
+                .collect(Collectors.toCollection(HashSet::new));
+        return roleRepository.save(Role.builder()
+                .name(name).description(description)
+                .permissions(permissions).build());
+    }
+
+    private User saveUser(String email, String fullName, String phone,
+                          String encodedPw, Role... roles) {
         return userRepository.save(User.builder()
                 .email(email).password(encodedPw)
                 .fullName(fullName).phoneNumber(phone)
-                .role(Role.CUSTOMER).build());
+                .roles(new HashSet<>(Arrays.asList(roles)))
+                .build());
     }
 
     private void saveAddress(User user, String recipientName, String phone,

@@ -25,7 +25,9 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(user.getEmail())
                 .claim("userId", user.getId())
-                .claim("role", user.getRole().name())
+                // No role/permission claims: authorities are resolved from the
+                // database on every request, so a revoked role takes effect
+                // immediately instead of surviving until the token expires.
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())

@@ -3,12 +3,13 @@ package com.e_commerce.kento_shopping.controller;
 import com.e_commerce.kento_shopping.dto.request.LoginRequest;
 import com.e_commerce.kento_shopping.dto.request.RegisterRequest;
 import com.e_commerce.kento_shopping.dto.response.AuthResponse;
+import com.e_commerce.kento_shopping.entity.User;
 import com.e_commerce.kento_shopping.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,5 +28,10 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request){
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<AuthResponse> me(@AuthenticationPrincipal User user){
+        return ResponseEntity.ok(authService.me(user));
     }
 }

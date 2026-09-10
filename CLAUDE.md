@@ -23,13 +23,38 @@ Requires a local MySQL database named `kento_shopping`. `ddl-auto: update` — H
 
 `application-dev.yaml` is **gitignored** and must exist locally. It holds the datasource credentials *and* `jwt.secret` / `jwt.expiration` — the base `application.yaml` does not define them, so any new profile must supply both or `JwtUtil` fails to start.
 
-`DataSeeder` (`@Profile("dev")`) seeds categories, ~43 products with inventory, users, and sample orders on first run only (`if (userRepository.count() > 0) return;`). Seeded admin is `admin@kento.com` / `Kiet123456`. Product images are served from `src/main/resources/static/images/products/<category>/`, referenced by `imageUrl` paths like `/images/products/electronics/iphone15pro.png`.
+`DataSeeder` (`@Profile("dev")`) seeds the permission catalogue, roles, categories, ~43 products with inventory, users, and sample orders on first run only (`if (userRepository.count() > 0) return;`). Seed order matters: permissions → roles → role/permission links → users.
+
+Because it bails on a populated database and `ddl-auto: update` never drops columns, any schema change to the role model means dropping and recreating `kento_shopping` rather than migrating. Flyway is deferred until pre-deploy.
+
+Seeded accounts, all with password `Kiet123456`:
+
+| Account | Roles |
+| ------- | ----- |
+| `admin@kento.com` | `ADMIN` |
+| `product.staff@kento.com` | `PRODUCT_STAFF` |
+| `order.staff@kento.com` | `ORDER_STAFF` |
+| `flashsale@kento.com` | `FLASHSALE_MANAGER` |
+| `nguyen.van.an@gmail.com` | `CUSTOMER` + `ORDER_STAFF` — deliberate dual-role fixture |
+| 9 other `@gmail.com` customers | `CUSTOMER` |
+
+`CUSTOMER` holding zero permissions is correct, not a seeding bug: a customer's access comes from being authenticated plus owning the row. Product images are served from `src/main/resources/static/images/products/<category>/`, referenced by `imageUrl` paths like `/images/products/electronics/iphone15pro.png`.
 
 ## Architecture
 
 Layering is strict: `controller` → `service` (interface) → `service.impl` → `repository`. Controllers never touch repositories or entities directly; every response goes out as a DTO built by a private `mapTo…Response` method inside the service impl.
 
-**Security.** `User` *is* the `UserDetails` implementation, so controllers take `@AuthenticationPrincipal User user` and services receive the entity directly — there is no separate lookup-by-email step in business code. `JwtAuthFilter` validates the bearer token and populates the SecurityContext; it never rejects a request itself (invalid/missing token just falls through to the authorization rules in `SecurityConfig`). Authorization is URL-based in `SecurityConfig`, not annotation-based: `/api/v1/admin/**` requires `ROLE_ADMIN`, GET on products/categories and `/api/v1/auth/**` are public, everything else authenticated. Admin endpoints live under `controller/admin/` with the matching `dto/request/admin/` package. Ownership checks (does this order belong to this user?) are done inside the service, throwing `IllegalArgumentException`.
+**Security.** `User` *is* the `UserDetails` implementation, so controllers take `@AuthenticationPrincipal User user` and services receive the entity directly — there is no separate lookup-by-email step in business code. `JwtAuthFilter` validates the bearer token and populates the SecurityContext; it never rejects a request itself (invalid/missing token just falls through to the authorization rules in `SecurityConfig`). Admin endpoints live under `controller/admin/` with the matching `dto/request/admin/` package. Ownership checks (does this order belong to this user?) are done inside the service, throwing `IllegalArgumentException`.
+
+**RBAC.** Authorization is permission-based via `@PreAuthorize("hasAuthority('…')")` on controller methods. `SecurityConfig` keeps only coarse rules: public paths, `hasRole("CUSTOMER")` on the shopping endpoints, and `/api/v1/admin/**` merely `authenticated()` as a first gate — which admin may do what is decided by the annotations.
+
+`User` holds many `Role`s (`USER_ROLE`), each granting many `Permission`s (`ROLE_PERMISSION`); there is no `role` column. `getAuthorities()` emits permission names *and* `ROLE_<name>` for each role, so both `hasAuthority` and `hasRole` work. Permissions are a **closed set** defined by the `PermissionName` enum — a name outside it is rejected, since only a `@PreAuthorize` literal gives a permission meaning. Roles are rows and may be composed at runtime through `ROLE_MANAGE`.
+
+Authorities are never put in the JWT: `CustomUserDetailsService` reloads them per request via `UserRepository.findByEmailWithAuthorities`, so a role change takes effect on the victim's next request with no token refresh. Two consequences to respect — that query must join-fetch `roles` and `roles.permissions` (`getAuthorities()` runs after the persistence context closes), and both collections must be `Set`, not `List`, or Hibernate throws `MultipleBagFetchException`.
+
+**Separation of duties.** Admins and staff cannot shop — cart, orders and addresses require `ROLE_CUSTOMER`. An account that can approve coin top-ups must never be able to spend them. Staff who also shop hold two roles; the seeder includes one such account deliberately. `ROLE_ASSIGN` (hand out existing roles) is split from `ROLE_MANAGE` (invent roles, hence effectively root) — that split is the privilege-escalation boundary.
+
+`GlobalExceptionHandler` must keep its `AccessDeniedException` handler: without it the catch-all `Exception` handler turns every `@PreAuthorize` denial into a 500.
 
 CORS is hardcoded to `http://localhost:5173` in `SecurityConfig` for the frontend dev server.
 

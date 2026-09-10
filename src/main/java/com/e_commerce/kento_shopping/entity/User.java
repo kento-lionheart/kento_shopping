@@ -1,6 +1,5 @@
 package com.e_commerce.kento_shopping.entity;
 
-import com.e_commerce.kento_shopping.enums.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -9,7 +8,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "USERS")
@@ -35,14 +35,37 @@ public class User extends BaseEntity implements UserDetails {
     @Column(nullable = false)
     private String phoneNumber;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    @NotNull
-    private Role role;
+    // Set, not List: this and Role.permissions are join-fetched together in
+    // findByEmailWithAuthorities, which throws MultipleBagFetchException for
+    // bag semantics.
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "USER_ROLE",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    @Builder.Default
+    private Set<Role> roles = new HashSet<>();
 
+    /**
+     * Emits permission names for {@code hasAuthority} checks and {@code ROLE_}
+     * prefixed role names for {@code hasRole}. A Set collapses the duplicates a
+     * user holding overlapping roles would otherwise produce.
+     */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        for (Role role : roles) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
+            for (Permission permission : role.getPermissions()) {
+                authorities.add(new SimpleGrantedAuthority(permission.getName()));
+            }
+        }
+        return authorities;
+    }
+
+    public boolean hasRole(String roleName) {
+        return roles.stream().anyMatch(r -> r.getName().equals(roleName));
     }
 
     @Override
