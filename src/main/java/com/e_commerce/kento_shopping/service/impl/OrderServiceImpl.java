@@ -12,6 +12,7 @@ import com.e_commerce.kento_shopping.enums.OrderStatus;
 import com.e_commerce.kento_shopping.enums.PaymentMethod;
 import com.e_commerce.kento_shopping.enums.PaymentStatus;
 import com.e_commerce.kento_shopping.exception.InsufficientStockException;
+import com.e_commerce.kento_shopping.exception.ResourceAccessDeniedException;
 import com.e_commerce.kento_shopping.exception.OrderNotFoundException;
 import com.e_commerce.kento_shopping.repository.OrderRepository;
 import com.e_commerce.kento_shopping.repository.PaymentRepository;
@@ -79,7 +80,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found"));
         if(!order.getUser().getId().equals(user.getId())){
-            throw new IllegalArgumentException("You don't have access to this order !!!");
+            throw new ResourceAccessDeniedException("You do not have access to this order");
         }
         if(order.getStatus()!= OrderStatus.PENDING){
             throw new IllegalArgumentException("Only pending orders can be cancelled");
@@ -95,8 +96,12 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<AdminOrderSummaryResponse> getAllOrders(String email, OrderStatus status, Pageable pageable) {
+        boolean hasEmail = email != null && !email.isBlank();
         Page<Order> orders;
-        if(email != null && !email.isBlank()){
+        if(hasEmail && status != null){
+            orders = orderRepository.findByUserEmailContainingIgnoreCaseAndStatus(email, status, pageable);
+        }
+        else if(hasEmail){
             orders = orderRepository.findByUserEmailContainingIgnoreCase(email, pageable);
         }
         else if(status != null){
@@ -233,7 +238,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found"));
         if(!order.getUser().getId().equals(user.getId())){
-            throw new IllegalArgumentException("You do not have access to this order");
+            throw new ResourceAccessDeniedException("You do not have access to this order");
         }
         if(order.getStatus() != OrderStatus.PENDING){
             throw new IllegalArgumentException("Order is not in payable state");
