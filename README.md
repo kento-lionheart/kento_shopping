@@ -37,9 +37,11 @@ Kento
 | UC-07 | View product details + stock status | ✅ Done |
 | UC-08 | Manage cart | ✅ Done |
 | UC-09 | Checkout and place order | ✅ Done |
-| UC-10 | Make payment | ✅ Done |
+| UC-10 | Pay for an order with coins | ✅ Done |
 | UC-11 | View order history | ✅ Done |
-| UC-12 | Cancel order | ✅ Done |
+| UC-12 | Cancel order (unpaid only) | ✅ Done |
+| UC-16 | Request coin top-up | ✅ Done |
+| UC-18 | View wallet and ledger | ✅ Done |
 
 ### Admin
 | UC | Feature | Status |
@@ -47,6 +49,13 @@ Kento
 | UC-13 | Manage products and inventory | ✅ Done |
 | UC-14 | Manage orders and statuses | ✅ Done |
 | UC-15 | Manage roles and permissions | ✅ Done |
+| UC-17 | Review coin top-up requests | ✅ Done |
+
+### Coins
+
+Coins are the only way to pay — 1 coin = 1 VND, so catalogue prices are unchanged. There is no payment gateway: coins exist only when an admin approves a customer's top-up request, and the approving admin is recorded against it.
+
+A wallet keeps a materialised balance; the real record is an append-only ledger, both written in the same transaction so `SUM(ledger) == balance` always holds. Staff and admins have no wallet at all — an account that can create coins must not be able to spend them.
 
 ### Access control
 
@@ -99,9 +108,18 @@ DELETE /api/v1/cart                             Clear cart
 ### Orders
 ```
 POST   /api/v1/orders/checkout                  Place an order
-POST   /api/v1/orders/{orderId}/payment         Make payment for an order
+POST   /api/v1/orders/{orderId}/payment         Pay with coins — no request body
 GET    /api/v1/orders                           View order history
 PATCH  /api/v1/orders/{orderId}/cancel          Cancel a pending order
+```
+
+### Wallet
+```
+GET    /api/v1/wallet                           Balance + 10 most recent transactions
+GET    /api/v1/wallet/transactions               Paginated ledger
+POST   /api/v1/wallet/top-ups                   Request coins (10,000 – 50,000,000)
+GET    /api/v1/wallet/top-ups                   Own top-up requests
+DELETE /api/v1/wallet/top-ups/{id}              Withdraw a pending request
 ```
 
 ### Admin
