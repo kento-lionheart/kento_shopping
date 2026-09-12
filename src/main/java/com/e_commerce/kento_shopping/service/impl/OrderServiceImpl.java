@@ -1,23 +1,23 @@
 package com.e_commerce.kento_shopping.service.impl;
 
 import com.e_commerce.kento_shopping.dto.request.CheckoutRequest;
-import com.e_commerce.kento_shopping.dto.request.PaymentRequest;
 import com.e_commerce.kento_shopping.dto.request.admin.UpdateOrderStatusRequest;
 import com.e_commerce.kento_shopping.dto.response.AdminOrderSummaryResponse;
 import com.e_commerce.kento_shopping.dto.response.OrderItemResponse;
 import com.e_commerce.kento_shopping.dto.response.OrderResponse;
 import com.e_commerce.kento_shopping.dto.response.OrderSummaryResponse;
 import com.e_commerce.kento_shopping.entity.*;
+import com.e_commerce.kento_shopping.enums.CoinTxType;
 import com.e_commerce.kento_shopping.enums.OrderStatus;
 import com.e_commerce.kento_shopping.enums.PaymentMethod;
 import com.e_commerce.kento_shopping.enums.PaymentStatus;
-import com.e_commerce.kento_shopping.exception.CartNotFoundException;
 import com.e_commerce.kento_shopping.exception.InsufficientStockException;
 import com.e_commerce.kento_shopping.exception.OrderNotFoundException;
-import com.e_commerce.kento_shopping.repository.CartRepository;
 import com.e_commerce.kento_shopping.repository.OrderRepository;
 import com.e_commerce.kento_shopping.repository.PaymentRepository;
+import com.e_commerce.kento_shopping.service.CartService;
 import com.e_commerce.kento_shopping.service.OrderService;
+import com.e_commerce.kento_shopping.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,8 +33,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
-    private final CartRepository cartRepository;
+    private final CartService cartService;
     private final PaymentRepository paymentRepository;
+    private final WalletService walletService;
+
     private OrderItemResponse mapToOrderItemResponse(OrderItem orderItem){
         return new OrderItemResponse(
                 orderItem.getId(),
@@ -130,6 +132,11 @@ public class OrderServiceImpl implements OrderService {
         if (order.getStatus() == OrderStatus.CANCELLED) {
             throw new IllegalArgumentException("Cancelled orders cannot be updated");
         }
+        // Cancelling here would skip restocking and the coin refund, silently
+        // keeping the customer's money. Cancellation needs its own path.
+        if (request.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalArgumentException("Orders cannot be cancelled through a status update");
+        }
         order.setStatus(request.getStatus());
         return mapToOrderResponse(order);
     }
@@ -137,8 +144,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse checkout(User user, CheckoutRequest request) {
-        Cart cart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+        Cart cart = cartService.getOrCreate(user);
         if(cart.getItems().isEmpty()){
             throw new IllegalArgumentException("Cart is empty");
         }
@@ -223,7 +229,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderResponse makePayment(User user, Long orderId, PaymentRequest request) {
+    public OrderResponse makePayment(User user, Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found"));
         if(!order.getUser().getId().equals(user.getId())){
@@ -237,19 +243,19 @@ public class OrderServiceImpl implements OrderService {
         if(alreadyPaid){
             throw new IllegalArgumentException("Order has already been paid");
         }
+        Wallet wallet = walletService.getOrCreate(user);
+        walletService.debit(wallet, order.getTotalAmount(), CoinTxType.PURCHASE,
+                "ORDER", order.getId(), null);
+
         Payment payment = Payment.builder()
                 .order(order)
-                .method(request.getPaymentMethod())
+                .method(PaymentMethod.COIN)
                 .amount(order.getTotalAmount())
                 .transactionId(UUID.randomUUID().toString())
+                .status(PaymentStatus.SUCCESS)
+                .paidAt(LocalDateTime.now())
                 .build();
-        if (request.getPaymentMethod() == PaymentMethod.MOMO) {
-            payment.setStatus(PaymentStatus.SUCCESS);
-            payment.setPaidAt(LocalDateTime.now());
-            order.setStatus(OrderStatus.PAID);
-        } else {
-            payment.setStatus(PaymentStatus.PENDING);
-        }
+        order.setStatus(OrderStatus.PAID);
 
         order.getPayments().add(payment);
         paymentRepository.save(payment);

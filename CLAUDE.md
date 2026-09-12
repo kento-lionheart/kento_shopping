@@ -23,7 +23,9 @@ Requires a local MySQL database named `kento_shopping`. `ddl-auto: update` — H
 
 `application-dev.yaml` is **gitignored** and must exist locally. It holds the datasource credentials *and* `jwt.secret` / `jwt.expiration` — the base `application.yaml` does not define them, so any new profile must supply both or `JwtUtil` fails to start.
 
-`DataSeeder` (`@Profile("dev")`) seeds the permission catalogue, roles, categories, ~43 products with inventory, users, and sample orders on first run only (`if (userRepository.count() > 0) return;`). Seed order matters: permissions → roles → role/permission links → users.
+`DataSeeder` (`@Profile("dev")`) seeds the permission catalogue, roles, categories, ~43 products with inventory, users, wallets, and sample orders on first run only (`if (userRepository.count() > 0) return;`). Seed order matters: permissions → roles → role/permission links → users → wallets → orders.
+
+Each of the 10 customers gets a wallet holding 100,000,000 coins, credited through an `APPROVED` `TOP_UP_REQUEST` rather than by setting the balance directly, plus 3 `PENDING` requests so the admin review queue is not empty. Seeded orders whose payment is `SUCCESS` debit real coins, so `SUM(ledger) == balance` holds from the very first run instead of only after the first live payment.
 
 Because it bails on a populated database and `ddl-auto: update` never drops columns, any schema change to the role model means dropping and recreating `kento_shopping` rather than migrating. Flyway is deferred until pre-deploy.
 
@@ -62,7 +64,13 @@ CORS is hardcoded to `http://localhost:5173` in `SecurityConfig` for the fronten
 
 **Entities.** All extend `BaseEntity` (IDENTITY id, `@CreationTimestamp` / `@UpdateTimestamp`). `Inventory` is a separate `@OneToOne @MapsId` entity sharing the product's PK, with an `@Version` optimistic-lock column — stock lives there, never on `Product`. Orders snapshot data at purchase time (`OrderItem.productName`, `priceAtPurchase`, and the flattened `ship*` address fields on `Order`) so later product/address edits don't rewrite history.
 
-**Order lifecycle.** `checkout` validates stock → computes subtotal + flat 30,000 VND shipping → creates `Order(PENDING)` + `OrderItem`s → decrements `Inventory.quantity` → clears the cart. `cancelOrder` restores inventory and is only allowed from `PENDING`. `makePayment` marks the order `PAID` only for `MOMO`; other methods leave the payment `PENDING`. Admin `updateOrderStatus` refuses to change `DELIVERED` or `CANCELLED` orders. All of these rely on JPA dirty checking inside `@Transactional` rather than explicit `save()` calls.
+**Order lifecycle.** `checkout` validates stock → computes subtotal + flat 30,000 shipping → creates `Order(PENDING)` + `OrderItem`s → decrements `Inventory.quantity` → clears the cart. `cancelOrder` restores inventory and is only allowed from `PENDING`. `makePayment` takes no request body — `COIN` is the only method — and debits the wallet, appends a `PURCHASE` ledger row, creates the `Payment` and sets the order `PAID`, all in one transaction. Insufficient balance throws `InsufficientBalanceException` (→ 400) and leaves the order `PENDING`, so the customer can top up and pay the order they already placed. Admin `updateOrderStatus` refuses to change `DELIVERED` or `CANCELLED` orders, and refuses `CANCELLED` as a *target* — setting it there would skip the restock and the coin refund, silently keeping the customer's money. All of these rely on JPA dirty checking inside `@Transactional` rather than explicit `save()` calls.
+
+**Wallet and coins.** 1 coin = 1 VND, so catalogue prices are unchanged. `WALLET` holds a materialised balance with an `@Version` column; `COIN_TRANSACTION` is the append-only ledger and the real record. `WalletServiceImpl.write` is the only place a balance moves, and it writes both rows in one transaction — that is what makes `SUM(ledger.amount) == wallet.balance` an invariant you can check. Never mutate `Wallet.balance` outside `WalletService.credit` / `debit`.
+
+Wallets are created lazily by `WalletService.getOrCreate`, guarded by a unique constraint on `user_id` (a lost race is caught as `DataIntegrityViolationException` and re-read). That covers seeded, registered, and later-granted customers without any of those paths knowing about wallets. Staff and admins never have one — `/api/v1/wallet/**` requires `ROLE_CUSTOMER`, which is what keeps approving coins and spending them in separate accounts.
+
+Coins exist only because an admin approved a `TOP_UP_REQUEST`; `reviewedBy` records who. Re-checking `PENDING` inside the approval transaction is what stops two admins crediting the same request twice.
 
 **Product listing.** `ProductServiceImpl.getProducts` composes `Specification`s (name/description LIKE, category equals) via `Specification.allOf`; sorting and pagination are parsed in `ProductController` (`sort=newest|price_asc|price_desc`, default page size 12).
 

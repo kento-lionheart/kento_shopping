@@ -11,8 +11,10 @@ import com.e_commerce.kento_shopping.exception.InsufficientStockException;
 import com.e_commerce.kento_shopping.exception.ProductNotFoundException;
 import com.e_commerce.kento_shopping.repository.CartRepository;
 import com.e_commerce.kento_shopping.repository.ProductRepository;
+import com.e_commerce.kento_shopping.repository.UserRepository;
 import com.e_commerce.kento_shopping.service.CartService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ import java.util.List;
 public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
 
     private CartResponse mapToResponse(Cart cart){
         List<CartItemResponse> items = cart.getItems().stream()
@@ -53,21 +56,37 @@ public class CartServiceImpl implements CartService {
                 .sum();
         return new CartResponse(items, total, itemCount);
     }
+    /**
+     * Cart uses @MapsId, so its primary key is the user id: uniqueness is
+     * structural, and a concurrent first access collides on the PK rather than
+     * a separate constraint. The principal from @AuthenticationPrincipal is
+     * detached, and @MapsId derives the id from the association, so the user
+     * must be re-attached before persisting.
+     */
     @Override
+    @Transactional
+    public Cart getOrCreate(User user) {
+        return cartRepository.findByUser(user).orElseGet(() -> {
+            try {
+                User managed = userRepository.getReferenceById(user.getId());
+                return cartRepository.saveAndFlush(Cart.builder().user(managed).build());
+            } catch (DataIntegrityViolationException e) {
+                return cartRepository.findByUser(user)
+                        .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+            }
+        });
+    }
+
+    @Override
+    @Transactional
     public CartResponse getCart(User user) {
-        Cart cart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new CartNotFoundException("Cart not found"));
-        return mapToResponse(cart);
+        return mapToResponse(getOrCreate(user));
     }
 
     @Override
     @Transactional
     public CartResponse addItem(User user, CartItemRequest request) {
-        Cart userCart = cartRepository.findByUser(user)
-                .orElseGet(() -> {
-                    Cart newCart = Cart.builder().user(user).build();
-                    return cartRepository.save(newCart);
-                });
+        Cart userCart = getOrCreate(user);
         userCart.getItems().stream()
                 .filter(cartItem -> cartItem.getProduct().getId().equals(request.getProductId()))
                 .findAny()
@@ -125,8 +144,7 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public CartResponse clearCart(User user) {
-        Cart userCart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+        Cart userCart = getOrCreate(user);
         userCart.getItems().clear();
         return mapToResponse(userCart);
     }

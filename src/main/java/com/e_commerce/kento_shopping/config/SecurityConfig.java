@@ -49,6 +49,7 @@ public class SecurityConfig {
                 // approve top-ups must never be able to spend coins.
                 .requestMatchers("/api/v1/cart/**",
                                  "/api/v1/orders/**",
+                                 "/api/v1/wallet/**",
                                  "/api/v1/addresses/**").hasRole("CUSTOMER")
 
                 // Coarse gate only. Which admin may do what is decided by
