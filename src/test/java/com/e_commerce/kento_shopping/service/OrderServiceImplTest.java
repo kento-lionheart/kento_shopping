@@ -22,6 +22,7 @@ import com.e_commerce.kento_shopping.enums.PaymentStatus;
 import com.e_commerce.kento_shopping.exception.InsufficientBalanceException;
 import com.e_commerce.kento_shopping.exception.InsufficientStockException;
 import com.e_commerce.kento_shopping.exception.OrderNotFoundException;
+import com.e_commerce.kento_shopping.exception.ResourceAccessDeniedException;
 import com.e_commerce.kento_shopping.repository.OrderRepository;
 import com.e_commerce.kento_shopping.repository.PaymentRepository;
 import com.e_commerce.kento_shopping.service.impl.OrderServiceImpl;
@@ -460,7 +461,7 @@ class OrderServiceImplTest {
         when(orderRepository.findById(50L)).thenReturn(Optional.of(order));
 
         assertThatThrownBy(() -> orderService.makePayment(intruder, 50L))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ResourceAccessDeniedException.class)
                 .hasMessage("You do not have access to this order");
 
         verifyNoInteractions(walletService);
@@ -584,8 +585,8 @@ class OrderServiceImplTest {
         Inventory inventory = order.getItems().get(0).getProduct().getInventory();
 
         assertThatThrownBy(() -> orderService.cancelOrder(intruder, 50L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("You don't have access to this order !!!");
+                .isInstanceOf(ResourceAccessDeniedException.class)
+                .hasMessage("You do not have access to this order");
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
         assertThat(inventory.getQuantity()).isEqualTo(8);
@@ -730,7 +731,25 @@ class OrderServiceImplTest {
     }
 
     @Test
-    void getAllOrdersFiltersByEmailWhenEmailIsProvided() {
+    void getAllOrdersAppliesBothFiltersWhenEmailAndStatusAreProvided() {
+        Pageable pageable = PageRequest.of(0, 12);
+        User customer = user(1L, "nguyen.van.an@gmail.com");
+        Order order = orderWith(50L, customer, OrderStatus.PAID,
+                new ItemSpec("iPhone 15 Pro", new BigDecimal("30000000"), 8, 1));
+        when(orderRepository.findByUserEmailContainingIgnoreCaseAndStatus("nguyen", OrderStatus.PAID, pageable))
+                .thenReturn(new PageImpl<>(List.of(order), pageable, 1));
+
+        Page<AdminOrderSummaryResponse> page = orderService.getAllOrders("nguyen", OrderStatus.PAID, pageable);
+
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().get(0).getUserEmail()).isEqualTo("nguyen.van.an@gmail.com");
+        verify(orderRepository, never()).findByUserEmailContainingIgnoreCase(any(String.class), any(Pageable.class));
+        verify(orderRepository, never()).findByStatus(any(OrderStatus.class), any(Pageable.class));
+        verify(orderRepository, never()).findAll(any(Pageable.class));
+    }
+
+    @Test
+    void getAllOrdersFiltersByEmailAloneWhenStatusIsNull() {
         Pageable pageable = PageRequest.of(0, 12);
         User customer = user(1L, "nguyen.van.an@gmail.com");
         Order order = orderWith(50L, customer, OrderStatus.PENDING,
@@ -738,10 +757,9 @@ class OrderServiceImplTest {
         when(orderRepository.findByUserEmailContainingIgnoreCase("nguyen", pageable))
                 .thenReturn(new PageImpl<>(List.of(order), pageable, 1));
 
-        Page<AdminOrderSummaryResponse> page = orderService.getAllOrders("nguyen", OrderStatus.PAID, pageable);
+        Page<AdminOrderSummaryResponse> page = orderService.getAllOrders("nguyen", null, pageable);
 
         assertThat(page.getContent()).hasSize(1);
-        assertThat(page.getContent().get(0).getUserEmail()).isEqualTo("nguyen.van.an@gmail.com");
         verify(orderRepository, never()).findByStatus(any(OrderStatus.class), any(Pageable.class));
         verify(orderRepository, never()).findAll(any(Pageable.class));
     }

@@ -8,6 +8,7 @@ import com.e_commerce.kento_shopping.entity.User;
 import com.e_commerce.kento_shopping.entity.Wallet;
 import com.e_commerce.kento_shopping.enums.CoinTxType;
 import com.e_commerce.kento_shopping.enums.TopUpStatus;
+import com.e_commerce.kento_shopping.exception.ResourceAccessDeniedException;
 import com.e_commerce.kento_shopping.exception.TopUpRequestNotFoundException;
 import com.e_commerce.kento_shopping.repository.TopUpRequestRepository;
 import com.e_commerce.kento_shopping.service.TopUpService;
@@ -73,7 +74,7 @@ public class TopUpServiceImpl implements TopUpService {
         TopUpRequest req = topUpRequestRepository.findById(requestId)
                 .orElseThrow(() -> new TopUpRequestNotFoundException("Top-up request not found"));
         if (!req.getUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("You do not have access to this request");
+            throw new ResourceAccessDeniedException("You do not have access to this request");
         }
         if (req.getStatus() != TopUpStatus.PENDING) {
             throw new IllegalArgumentException("Only pending requests can be cancelled");
