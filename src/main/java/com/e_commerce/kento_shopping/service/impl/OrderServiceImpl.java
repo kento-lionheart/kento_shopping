@@ -11,12 +11,11 @@ import com.e_commerce.kento_shopping.enums.CoinTxType;
 import com.e_commerce.kento_shopping.enums.OrderStatus;
 import com.e_commerce.kento_shopping.enums.PaymentMethod;
 import com.e_commerce.kento_shopping.enums.PaymentStatus;
-import com.e_commerce.kento_shopping.exception.CartNotFoundException;
 import com.e_commerce.kento_shopping.exception.InsufficientStockException;
 import com.e_commerce.kento_shopping.exception.OrderNotFoundException;
-import com.e_commerce.kento_shopping.repository.CartRepository;
 import com.e_commerce.kento_shopping.repository.OrderRepository;
 import com.e_commerce.kento_shopping.repository.PaymentRepository;
+import com.e_commerce.kento_shopping.service.CartService;
 import com.e_commerce.kento_shopping.service.OrderService;
 import com.e_commerce.kento_shopping.service.WalletService;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +33,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
-    private final CartRepository cartRepository;
+    private final CartService cartService;
     private final PaymentRepository paymentRepository;
     private final WalletService walletService;
 
@@ -145,8 +144,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse checkout(User user, CheckoutRequest request) {
-        Cart cart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new CartNotFoundException("Cart not found"));
+        Cart cart = cartService.getOrCreate(user);
         if(cart.getItems().isEmpty()){
             throw new IllegalArgumentException("Cart is empty");
         }
