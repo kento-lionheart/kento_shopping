@@ -3,6 +3,7 @@ package com.e_commerce.kento_shopping.config;
 import com.e_commerce.kento_shopping.entity.*;
 import com.e_commerce.kento_shopping.enums.*;
 import com.e_commerce.kento_shopping.repository.*;
+import com.e_commerce.kento_shopping.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
@@ -36,7 +37,11 @@ public class DataSeeder implements CommandLineRunner {
     private final CartRepository cartRepository;
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
+    private final TopUpRequestRepository topUpRequestRepository;
+    private final WalletService walletService;
     private final PasswordEncoder passwordEncoder;
+
+    private User seedAdmin;
 
     @Override
     @Transactional
@@ -243,7 +248,7 @@ public class DataSeeder implements CommandLineRunner {
         String pw = passwordEncoder.encode("Kiet123456");
 
         // Admins and staff get no cart and no wallet: they cannot shop.
-        saveUser("admin@kento.com",         "Kento Admin",        "0900000000", pw, adminRole);
+        seedAdmin = saveUser("admin@kento.com", "Kento Admin",     "0900000000", pw, adminRole);
         saveUser("product.staff@kento.com", "Product Staff",      "0900000001", pw, productStaff);
         saveUser("order.staff@kento.com",   "Order Staff",        "0900000002", pw, orderStaff);
         saveUser("flashsale@kento.com",     "Flash Sale Manager", "0900000003", pw, flashSaleManager);
@@ -279,6 +284,18 @@ public class DataSeeder implements CommandLineRunner {
         saveAddress(linh,   "Dang Thi Linh",    "0911111111", "55 Ly Tu Trong",       "Ben Nghe",      "District 1", "Ho Chi Minh", "700000");
 
         // ----------------------------------------------------------------
+        // 4b. Wallets — staff and admin get none, they cannot shop
+        // ----------------------------------------------------------------
+        for (User customer : List.of(an, binh, cuong, dung, em, phuong, giang, hoa, khanh, linh)) {
+            seedWallet(customer, "100000000");
+        }
+
+        // A queue for the admin to review
+        seedPendingTopUp(binh,  "5000000");
+        seedPendingTopUp(khanh, "20000000");
+        seedPendingTopUp(hoa,   "750000");
+
+        // ----------------------------------------------------------------
         // 5. Active carts  (4 users still browsing)
         // ----------------------------------------------------------------
         // an: browsing electronics + books
@@ -310,67 +327,67 @@ public class DataSeeder implements CommandLineRunner {
         // cuong — paid iPhone
         seedOrder(cuong, "Le Van Cuong", "0903333333", "789 Tran Hung Dao", "Cau Kho", "District 1",
                 List.of(iphone15Pro), List.of(1),
-                PaymentMethod.MOMO, OrderStatus.PAID, PaymentStatus.SUCCESS);
+                OrderStatus.PAID, PaymentStatus.SUCCESS);
 
         // dung — pending COD order (Nike + Clean Code)
         seedOrder(dung, "Pham Thi Dung", "0904444444", "12 Hai Ba Trung", "Da Kao", "District 1",
                 List.of(nikeAirMax270, cleanCode), List.of(2, 1),
-                PaymentMethod.COD, OrderStatus.PENDING, PaymentStatus.PENDING);
+                OrderStatus.PENDING, PaymentStatus.PENDING);
 
         // em — pending bank transfer (coffeeMaker + yogaMat)
         seedOrder(em, "Hoang Van Em", "0905555555", "34 Vo Van Tan", "Vo Thi Sau", "District 3",
                 List.of(coffeeMaker, yogaMat), List.of(1, 2),
-                PaymentMethod.BANK_TRANSFER, OrderStatus.PENDING, PaymentStatus.PENDING);
+                OrderStatus.PENDING, PaymentStatus.PENDING);
 
         // an — paid books order
         seedOrder(an, "Nguyen Van An", "0901111111", "123 Nguyen Hue", "Ben Nghe", "District 1",
                 List.of(cleanCode), List.of(3),
-                PaymentMethod.MOMO, OrderStatus.PAID, PaymentStatus.SUCCESS);
+                OrderStatus.PAID, PaymentStatus.SUCCESS);
 
         // binh — shipped iPhone + Nike
         seedOrder(binh, "Tran Thi Binh", "0902222222", "456 Le Loi", "Ben Thanh", "District 1",
                 List.of(iphone15Pro, nikeAirMax270), List.of(1, 1),
-                PaymentMethod.MOMO, OrderStatus.SHIPPED, PaymentStatus.SUCCESS);
+                OrderStatus.SHIPPED, PaymentStatus.SUCCESS);
 
         // giang — delivered MacBook
         seedOrder(giang, "Do Minh Giang", "0907777777", "15 Nguyen Dinh Chieu", "Da Kao", "District 3",
                 List.of(macBookPro), List.of(1),
-                PaymentMethod.BANK_TRANSFER, OrderStatus.DELIVERED, PaymentStatus.SUCCESS);
+                OrderStatus.DELIVERED, PaymentStatus.SUCCESS);
 
         // hoa — paid headphones + air purifier
         seedOrder(hoa, "Vu Thi Hoa", "0908888888", "200 Cach Mang Thang 8", "Phuong 4", "District 3",
                 List.of(sonyWH1000XM5, aiPurifier), List.of(1, 1),
-                PaymentMethod.MOMO, OrderStatus.PAID, PaymentStatus.SUCCESS);
+                OrderStatus.PAID, PaymentStatus.SUCCESS);
 
         // linh — shipped Garmin watch
         seedOrder(linh, "Dang Thi Linh", "0911111111", "55 Ly Tu Trong", "Ben Nghe", "District 1",
                 List.of(garminForerunner), List.of(1),
-                PaymentMethod.MOMO, OrderStatus.SHIPPED, PaymentStatus.SUCCESS);
+                OrderStatus.SHIPPED, PaymentStatus.SUCCESS);
 
         // khanh — pending order with multiple items
         seedOrder(khanh, "Bui Van Khanh", "0909999999", "90 Nam Ky Khoi Nghia", "Ben Nghe", "District 1",
                 List.of(dellXps, designPatterns, resistanceBands), List.of(1, 1, 2),
-                PaymentMethod.BANK_TRANSFER, OrderStatus.PENDING, PaymentStatus.PENDING);
+                OrderStatus.PENDING, PaymentStatus.PENDING);
 
         // phuong — delivered home + sports bundle
         seedOrder(phuong, "Nguyen Thi Phuong", "0906666666", "88 Dien Bien Phu", "Da Kao", "District 3",
                 List.of(instantPot, kettlebell, yogaMat), List.of(1, 2, 1),
-                PaymentMethod.COD, OrderStatus.DELIVERED, PaymentStatus.SUCCESS);
+                OrderStatus.DELIVERED, PaymentStatus.SUCCESS);
 
         // an — 2nd order: electronics accessories
         seedOrder(an, "Nguyen Van An", "0901111111", "123 Nguyen Hue", "Ben Nghe", "District 1",
                 List.of(airPodsProM2, logiMxMaster), List.of(1, 1),
-                PaymentMethod.MOMO, OrderStatus.DELIVERED, PaymentStatus.SUCCESS);
+                OrderStatus.DELIVERED, PaymentStatus.SUCCESS);
 
         // binh — cancelled order
         seedOrder(binh, "Tran Thi Binh", "0902222222", "456 Le Loi", "Ben Thanh", "District 1",
                 List.of(canonEosR50), List.of(1),
-                PaymentMethod.BANK_TRANSFER, OrderStatus.CANCELLED, PaymentStatus.PENDING);
+                OrderStatus.CANCELLED, PaymentStatus.PENDING);
 
         // em — 2nd order: books + sports
         seedOrder(em, "Hoang Van Em", "0905555555", "34 Vo Van Tan", "Vo Thi Sau", "District 3",
                 List.of(atomicHabits, deepWork, resistanceBands), List.of(1, 1, 1),
-                PaymentMethod.MOMO, OrderStatus.PAID, PaymentStatus.SUCCESS);
+                OrderStatus.PAID, PaymentStatus.SUCCESS);
     }
 
     // ----------------------------------------------------------------
@@ -428,7 +445,7 @@ public class DataSeeder implements CommandLineRunner {
     private void seedOrder(User user, String recipientName, String phone,
                            String street, String ward, String district,
                            List<Product> products, List<Integer> quantities,
-                           PaymentMethod method, OrderStatus orderStatus, PaymentStatus paymentStatus) {
+                           OrderStatus orderStatus, PaymentStatus paymentStatus) {
         BigDecimal subtotal = BigDecimal.ZERO;
         for (int i = 0; i < products.size(); i++) {
             subtotal = subtotal.add(
@@ -456,12 +473,39 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         Payment payment = Payment.builder()
-                .order(order).method(method).amount(total)
+                .order(order).method(PaymentMethod.COIN).amount(total)
                 .transactionId(UUID.randomUUID().toString())
                 .status(paymentStatus)
                 .paidAt(paymentStatus == PaymentStatus.SUCCESS ? LocalDateTime.now() : null)
                 .build();
         order.getPayments().add(payment);
         paymentRepository.save(payment);
+
+        // Paid seed orders must move real coins, otherwise SUM(ledger) would
+        // not equal the wallet balance from the very first run.
+        if (paymentStatus == PaymentStatus.SUCCESS) {
+            walletService.debit(walletService.getOrCreate(user), total,
+                    CoinTxType.PURCHASE, "ORDER", order.getId(), null);
+        }
+    }
+
+    private void seedWallet(User user, String amount) {
+        TopUpRequest request = topUpRequestRepository.save(TopUpRequest.builder()
+                .user(user)
+                .requestedAmount(new BigDecimal(amount))
+                .status(TopUpStatus.APPROVED)
+                .reviewedBy(seedAdmin)
+                .reviewedAt(LocalDateTime.now())
+                .build());
+        walletService.credit(walletService.getOrCreate(user), new BigDecimal(amount),
+                CoinTxType.TOP_UP, "TOP_UP_REQUEST", request.getId(), null);
+    }
+
+    private void seedPendingTopUp(User user, String amount) {
+        topUpRequestRepository.save(TopUpRequest.builder()
+                .user(user)
+                .requestedAmount(new BigDecimal(amount))
+                .status(TopUpStatus.PENDING)
+                .build());
     }
 }

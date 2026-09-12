@@ -1,7 +1,6 @@
 package com.e_commerce.kento_shopping.controller;
 
 import com.e_commerce.kento_shopping.dto.request.CheckoutRequest;
-import com.e_commerce.kento_shopping.dto.request.PaymentRequest;
 import com.e_commerce.kento_shopping.dto.response.OrderResponse;
 import com.e_commerce.kento_shopping.dto.response.OrderSummaryResponse;
 import com.e_commerce.kento_shopping.entity.User;
@@ -36,10 +35,9 @@ public class OrderController {
     @PostMapping("/{orderId}/payment")
     public ResponseEntity<OrderResponse> makePayment(
             @AuthenticationPrincipal User user,
-            @PathVariable Long orderId,
-            @Valid @RequestBody PaymentRequest request
+            @PathVariable Long orderId
             ){
-        return ResponseEntity.ok(orderService.makePayment(user, orderId, request));
+        return ResponseEntity.ok(orderService.makePayment(user, orderId));
     }
 
     @PatchMapping("/{orderId}/cancel")
