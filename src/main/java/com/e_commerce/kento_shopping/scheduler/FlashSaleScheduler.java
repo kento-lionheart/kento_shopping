@@ -1,6 +1,7 @@
 package com.e_commerce.kento_shopping.scheduler;
 
 import com.e_commerce.kento_shopping.enums.FlashSaleStatus;
+import com.e_commerce.kento_shopping.redis.RedisCircuitBreaker;
 import com.e_commerce.kento_shopping.service.FlashSaleLifecycleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,14 +18,23 @@ import java.util.function.Consumer;
 public class FlashSaleScheduler {
 
     private final FlashSaleLifecycleService lifecycle;
+    private final RedisCircuitBreaker breaker;
 
     @Scheduled(fixedDelay = 1000)
     public void tick() {
         LocalDateTime now = LocalDateTime.now();
+        boolean redisDown = breaker.isOpen();
+        if (redisDown) {
+            forEach(lifecycle.idsIn(FlashSaleStatus.ACTIVE), lifecycle::pause, "pause");
+        } else {
+            forEach(lifecycle.idsIn(FlashSaleStatus.PAUSED), lifecycle::resume, "resume");
+        }
         forEach(lifecycle.dueToActivate(now), id -> lifecycle.activate(id, false), "activation");
         forEach(lifecycle.dueToClose(now), id -> lifecycle.beginClose(id, false), "close");
-        forEach(lifecycle.idsIn(FlashSaleStatus.ACTIVE), lifecycle::restoreStockKey, "stock key restore");
-        forEach(lifecycle.idsIn(FlashSaleStatus.CLOSING), lifecycle::settle, "settlement");
+        if (!redisDown) {
+            forEach(lifecycle.idsIn(FlashSaleStatus.ACTIVE), lifecycle::restoreStockKey, "stock key restore");
+            forEach(lifecycle.idsIn(FlashSaleStatus.CLOSING), lifecycle::settle, "settlement");
+        }
     }
 
     private void forEach(List<Long> saleIds, Consumer<Long> action, String step) {

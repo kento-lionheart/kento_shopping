@@ -2,6 +2,7 @@ package com.e_commerce.kento_shopping.consumer;
 
 import com.e_commerce.kento_shopping.exception.FlashSaleClaimRejectedException;
 import com.e_commerce.kento_shopping.redis.FlashSaleStockStore;
+import com.e_commerce.kento_shopping.redis.RedisCircuitBreaker;
 import com.e_commerce.kento_shopping.service.FlashSaleOrderService;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ public class FlashSaleClaimConsumer {
     private final StringRedisTemplate redis;
     private final FlashSaleOrderService orderService;
     private final FlashSaleStockStore stockStore;
+    private final RedisCircuitBreaker breaker;
 
     private StreamMessageListenerContainer<String, MapRecord<String, String, String>> container;
     private volatile boolean groupReady;
@@ -47,7 +49,7 @@ public class FlashSaleClaimConsumer {
         ensureGroup();
         container = StreamMessageListenerContainer.create(connectionFactory,
                 StreamMessageListenerContainerOptions.builder()
-                        .pollTimeout(Duration.ofSeconds(1))
+                        .pollTimeout(Duration.ofMillis(50))
                         .build());
         container.register(
                 StreamMessageListenerContainer.StreamReadRequest
@@ -55,7 +57,11 @@ public class FlashSaleClaimConsumer {
                         .consumer(Consumer.from(GROUP, CONSUMER))
                         .autoAcknowledge(false)
                         .cancelOnError(e -> false)
-                        .errorHandler(e -> log.warn("Flash-sale stream read failed: {}", e.getMessage()))
+                        .errorHandler(e -> {
+                            if (!breaker.isOpen()) {
+                                log.warn("Flash-sale stream read failed: {}", e.getMessage());
+                            }
+                        })
                         .build(),
                 this::process);
         container.start();

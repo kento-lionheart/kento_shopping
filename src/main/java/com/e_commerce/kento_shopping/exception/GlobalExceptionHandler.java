@@ -170,6 +170,13 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(400, ex.getMessage()));
     }
 
+    @ExceptionHandler(FlashSaleUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleFlashSaleUnavailable(FlashSaleUnavailableException ex){
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(503, ex.getMessage()));
+    }
+
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<ErrorResponse> handleRateLimitExceeded(RateLimitExceededException ex){
         return ResponseEntity

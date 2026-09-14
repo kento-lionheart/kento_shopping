@@ -130,6 +130,24 @@ public class FlashSaleLifecycleServiceImpl implements FlashSaleLifecycleService 
         }
     }
 
+    @Override
+    @Transactional
+    public void pause(Long saleId) {
+        FlashSale sale = findSale(saleId);
+        if (sale.getStatus() == FlashSaleStatus.ACTIVE) {
+            sale.setStatus(FlashSaleStatus.PAUSED);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void resume(Long saleId) {
+        FlashSale sale = findSale(saleId);
+        if (sale.getStatus() == FlashSaleStatus.PAUSED) {
+            sale.setStatus(FlashSaleStatus.ACTIVE);
+        }
+    }
+
     private FlashSale findSale(Long id) {
         return flashSaleRepository.findById(id)
                 .orElseThrow(() -> new FlashSaleNotFoundException("Flash sale not found"));

@@ -16,6 +16,7 @@ import com.e_commerce.kento_shopping.exception.FlashSaleSoldOutException;
 import com.e_commerce.kento_shopping.exception.RateLimitExceededException;
 import com.e_commerce.kento_shopping.exception.ResourceAccessDeniedException;
 import com.e_commerce.kento_shopping.redis.FlashSaleStockStore;
+import com.e_commerce.kento_shopping.redis.RedisCircuitBreaker;
 import com.e_commerce.kento_shopping.repository.FlashSaleRepository;
 import com.e_commerce.kento_shopping.service.FlashSaleService;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 
     private final FlashSaleRepository flashSaleRepository;
     private final FlashSaleStockStore stockStore;
+    private final RedisCircuitBreaker breaker;
 
     private PublicFlashSaleResponse mapToResponse(FlashSale sale, Integer remaining) {
         Product product = sale.getProduct();
@@ -85,11 +87,15 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     @Override
     public FlashSaleClaimResponse purchase(User user, Long saleId, FlashSalePurchaseRequest request) {
         String claimId = UUID.randomUUID().toString();
-        if (!stockStore.tryAcquire(user.getId(), RATE_LIMIT, RATE_WINDOW_MILLIS, claimId)) {
+        boolean admitted = breaker.call(
+                () -> stockStore.tryAcquire(user.getId(), RATE_LIMIT, RATE_WINDOW_MILLIS, claimId));
+        if (!admitted) {
             throw new RateLimitExceededException("Too many purchase attempts — please wait a few seconds");
         }
         int quantity = request.getQuantity();
-        long result = stockStore.claim(saleId, user.getId(), claimId, quantity);
+        long result = breaker.call(
+                () -> stockStore.claim(saleId, user.getId(), claimId, quantity),
+                "The sale did not respond in time. If your purchase went through, it will appear under claim " + claimId);
         if (result == -1) {
             throw new FlashSaleSoldOutException("Sold out — not enough stock left for this quantity");
         }
@@ -104,7 +110,7 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 
     @Override
     public FlashSaleClaimResponse getClaim(User user, String claimId) {
-        Map<String, String> claim = stockStore.claimStatus(claimId);
+        Map<String, String> claim = breaker.call(() -> stockStore.claimStatus(claimId));
         if (claim.isEmpty()) {
             throw new ClaimNotFoundException("Claim not found");
         }
@@ -123,6 +129,9 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     private List<Integer> remainingOf(List<FlashSale> sales) {
         if (sales.isEmpty()) {
             return List.of();
+        }
+        if (breaker.isOpen()) {
+            return Collections.nCopies(sales.size(), null);
         }
         try {
             List<Integer> remaining = stockStore.remaining(sales.stream().map(BaseEntity::getId).toList());

@@ -127,7 +127,7 @@ DELETE /api/v1/wallet/top-ups/{id}              Withdraw a pending request
 ```
 GET    /api/v1/flash-sales                      Live sales with remaining stock (public)
 GET    /api/v1/flash-sales/{id}                 One live sale (public)
-POST   /api/v1/flash-sales/{id}/purchase        Claim 1–3 units — 202 PROCESSING with a claimId (429 above 5 attempts / 10 s)
+POST   /api/v1/flash-sales/{id}/purchase        Claim 1–3 units — 202 PROCESSING with a claimId (429 above 5 attempts / 10 s, 503 while Redis is down)
 GET    /api/v1/flash-sales/claims/{claimId}     Poll a claim: PROCESSING, PAID or FAILED
 ```
 

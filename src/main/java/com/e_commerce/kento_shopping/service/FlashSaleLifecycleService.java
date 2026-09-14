@@ -20,4 +20,8 @@ public interface FlashSaleLifecycleService {
     void settle(Long saleId);
 
     void restoreStockKey(Long saleId);
+
+    void pause(Long saleId);
+
+    void resume(Long saleId);
 }
