@@ -17,8 +17,28 @@ public class FlashSaleStockStore {
     private static final long CLAIM_TTL_SECONDS = 24 * 60 * 60;
 
     private static final DefaultRedisScript<Long> CLAIM_SCRIPT = script("redis/flashsale-claim.lua");
+    private static final DefaultRedisScript<Long> FINALIZE_SCRIPT = script("redis/flashsale-finalize.lua");
 
     private final StringRedisTemplate redis;
+
+    public boolean isProcessing(String claimId) {
+        return "PROCESSING".equals(redis.opsForHash().get(claimKey(claimId), "status"));
+    }
+
+    public boolean finalizePaid(Long saleId, String claimId, int quantity, Long orderId) {
+        return finalize(saleId, claimId, quantity, "PAID", "", String.valueOf(orderId));
+    }
+
+    public boolean finalizeFailed(Long saleId, String claimId, int quantity, String message) {
+        return finalize(saleId, claimId, quantity, "FAILED", message, "");
+    }
+
+    private boolean finalize(Long saleId, String claimId, int quantity, String status, String message, String orderId) {
+        Long result = redis.execute(FINALIZE_SCRIPT,
+                List.of(claimKey(claimId), inflightKey(saleId), stockKey(saleId)),
+                status, String.valueOf(quantity), message, orderId);
+        return result != null && result == 1;
+    }
 
     public static String stockKey(Long saleId) {
         return "flashsale:" + saleId + ":stock";

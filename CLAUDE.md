@@ -72,6 +72,14 @@ Wallets are created lazily by `WalletService.getOrCreate`, guarded by a unique c
 
 Coins exist only because an admin approved a `TOP_UP_REQUEST`; `reviewedBy` records who. Re-checking `PENDING` inside the approval transaction is what stops two admins crediting the same request twice.
 
+**Flash sale.** One product per sale, no cart, no cancel or refund. The request path decides everything in Redis and never waits for MySQL; the database is written afterwards by a stream consumer.
+
+- *Lifecycle.* `FlashSaleScheduler` ticks every second through `FlashSaleLifecycleService` (a separate bean, so each sale gets its own `@Transactional` proxy call). Activation subtracts `allocatedQty` from `Inventory` in MySQL and writes `flashsale:{id}:stock` only *after commit*, with `SET NX` — a lost Redis write yields an unbuyable sale, never an oversold one, and the restore step re-creates a missing key. Close is two-phase: `CLOSING` deletes the stock key, and settlement returns `allocatedQty − soldQty` to `Inventory` only once `flashsale:{id}:inflight` is 0.
+- *Claim.* `resources/redis/flashsale-claim.lua` checks and decrements stock, adds the quantity to `inflight`, writes the claim hash and `XADD`s to `flashsale:claims` in one atomic call — nothing can be claimed without being published. The endpoint returns `202 PROCESSING` with a `claimId`; claim state lives only in Redis (24 h TTL), and a failed claim never writes an `Order`.
+- *Consumer.* `FlashSaleClaimConsumer` reads the stream as group `flashsale-orders` with manual ack. `FlashSaleOrderService.persistClaim` writes order, item, `PURCHASE` debit, payment and `soldQty` in one transaction. Idempotency comes from `Payment.transactionId = claimId` (already unique) plus `flashsale-finalize.lua`, which only acts on a claim still `PROCESSING`. Business rejections (no address, not enough coins) throw `FlashSaleClaimRejectedException` *before* any write and finalise the claim `FAILED`, returning the stock. Anything else leaves the message pending; a 5-second job re-claims idle entries and gives up after 5 deliveries. Processing is `synchronized`, which is what makes the listener and the retry job safe to share one message.
+- *Invariant.* `allocatedQty = stock + inflight + soldQty`. `inflight` counts units, not claims.
+- *Schema trap.* `status` columns backed by `@Enumerated(STRING)` are MySQL `ENUM`s; `ddl-auto: update` will not add a new constant, so extending `FlashSaleStatus` needs an `ALTER TABLE … MODIFY`.
+
 **Product listing.** `ProductServiceImpl.getProducts` composes `Specification`s (name/description LIKE, category equals) via `Specification.allOf`; sorting and pagination are parsed in `ProductController` (`sort=newest|price_asc|price_desc`, default page size 12).
 
 ## Tests
