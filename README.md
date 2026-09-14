@@ -50,6 +50,7 @@ Kento
 | UC-14 | Manage orders and statuses | ✅ Done |
 | UC-15 | Manage roles and permissions | ✅ Done |
 | UC-17 | Review coin top-up requests | ✅ Done |
+| UC-19 | Configure and run a flash sale | 🚧 Create / edit / cancel done; activation pending |
 
 ### Coins
 
@@ -139,6 +140,13 @@ GET    /api/v1/admin/roles                      List roles
 POST   /api/v1/admin/roles                      Compose a new role
 PUT    /api/v1/admin/roles/{id}/permissions     Edit what a role grants
 GET    /api/v1/admin/permissions                The permission catalogue (read-only)
+
+GET    /api/v1/admin/flash-sales                List sales (filter by status)
+GET    /api/v1/admin/flash-sales/{id}           View one sale
+POST   /api/v1/admin/flash-sales                Schedule a sale for one product
+PUT    /api/v1/admin/flash-sales/{id}           Edit a scheduled sale
+PUT    /api/v1/admin/flash-sales/{id}/cancel    Cancel a scheduled sale
+DELETE /api/v1/admin/flash-sales/{id}           Delete a scheduled or cancelled sale
 ```
 
 Each admin endpoint requires a specific permission, not merely an admin role — see the matrix in the design docs.
