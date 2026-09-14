@@ -156,6 +156,27 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(403, ex.getMessage()));
     }
 
+    @ExceptionHandler(FlashSaleSoldOutException.class)
+    public ResponseEntity<ErrorResponse> handleFlashSaleSoldOut(FlashSaleSoldOutException ex){
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(409, ex.getMessage()));
+    }
+
+    @ExceptionHandler(FlashSaleNotActiveException.class)
+    public ResponseEntity<ErrorResponse> handleFlashSaleNotActive(FlashSaleNotActiveException ex){
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(400, ex.getMessage()));
+    }
+
+    @ExceptionHandler(ClaimNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleClaimNotFound(ClaimNotFoundException ex){
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(404, ex.getMessage()));
+    }
+
     @ExceptionHandler(OptimisticLockingFailureException.class)
     public ResponseEntity<ErrorResponse> handleOptimisticLock(OptimisticLockingFailureException ex){
         return ResponseEntity

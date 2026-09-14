@@ -1,13 +1,16 @@
 package com.e_commerce.kento_shopping.controller;
 
+import com.e_commerce.kento_shopping.dto.request.FlashSalePurchaseRequest;
+import com.e_commerce.kento_shopping.dto.response.FlashSaleClaimResponse;
 import com.e_commerce.kento_shopping.dto.response.PublicFlashSaleResponse;
+import com.e_commerce.kento_shopping.entity.User;
 import com.e_commerce.kento_shopping.service.FlashSaleService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -25,5 +28,18 @@ public class FlashSaleController {
     @GetMapping("/{id}")
     public ResponseEntity<PublicFlashSaleResponse> getLive(@PathVariable Long id){
         return ResponseEntity.ok(flashSaleService.getLive(id));
+    }
+
+    @PostMapping("/{id}/purchase")
+    public ResponseEntity<FlashSaleClaimResponse> purchase(@AuthenticationPrincipal User user,
+                                                           @PathVariable Long id,
+                                                           @Valid @RequestBody FlashSalePurchaseRequest request){
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(flashSaleService.purchase(user, id, request));
+    }
+
+    @GetMapping("/claims/{claimId}")
+    public ResponseEntity<FlashSaleClaimResponse> getClaim(@AuthenticationPrincipal User user,
+                                                           @PathVariable String claimId){
+        return ResponseEntity.ok(flashSaleService.getClaim(user, claimId));
     }
 }
