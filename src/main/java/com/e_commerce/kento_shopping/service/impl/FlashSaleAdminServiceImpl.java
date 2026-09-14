@@ -25,7 +25,8 @@ import java.util.Set;
 public class FlashSaleAdminServiceImpl implements FlashSaleAdminService {
 
     private static final Set<FlashSaleStatus> OPEN_STATUSES =
-            EnumSet.of(FlashSaleStatus.SCHEDULED, FlashSaleStatus.ACTIVE, FlashSaleStatus.PAUSED);
+            EnumSet.of(FlashSaleStatus.SCHEDULED, FlashSaleStatus.ACTIVE,
+                    FlashSaleStatus.PAUSED, FlashSaleStatus.CLOSING);
 
     private final FlashSaleRepository flashSaleRepository;
     private final ProductRepository productRepository;

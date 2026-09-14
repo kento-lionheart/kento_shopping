@@ -15,6 +15,8 @@ public interface FlashSaleRepository extends JpaRepository<FlashSale, Long> {
     boolean existsByProductAndStatusIn(Product product, Collection<FlashSaleStatus> statuses);
     boolean existsByProductAndStatusInAndIdNot(Product product, Collection<FlashSaleStatus> statuses, Long id);
     Page<FlashSale> findByStatus(FlashSaleStatus status, Pageable pageable);
+    List<FlashSale> findByStatus(FlashSaleStatus status);
+    List<FlashSale> findByStatusInOrderByEndAtAsc(Collection<FlashSaleStatus> statuses);
     List<FlashSale> findByStatusAndStartAtLessThanEqual(FlashSaleStatus status, LocalDateTime now);
     List<FlashSale> findByStatusInAndEndAtLessThanEqual(Collection<FlashSaleStatus> statuses, LocalDateTime now);
 }

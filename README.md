@@ -50,7 +50,7 @@ Kento
 | UC-14 | Manage orders and statuses | ✅ Done |
 | UC-15 | Manage roles and permissions | ✅ Done |
 | UC-17 | Review coin top-up requests | ✅ Done |
-| UC-19 | Configure and run a flash sale | 🚧 Create / edit / cancel done; activation pending |
+| UC-19 | Configure and run a flash sale | ✅ Done (circuit-breaker pause pending) |
 
 ### Coins
 
@@ -123,6 +123,12 @@ GET    /api/v1/wallet/top-ups                   Own top-up requests
 DELETE /api/v1/wallet/top-ups/{id}              Withdraw a pending request
 ```
 
+### Flash sales
+```
+GET    /api/v1/flash-sales                      Live sales with remaining stock (public)
+GET    /api/v1/flash-sales/{id}                 One live sale (public)
+```
+
 ### Admin
 ```
 POST   /api/v1/admin/products                   Create product
@@ -146,6 +152,8 @@ GET    /api/v1/admin/flash-sales/{id}           View one sale
 POST   /api/v1/admin/flash-sales                Schedule a sale for one product
 PUT    /api/v1/admin/flash-sales/{id}           Edit a scheduled sale
 PUT    /api/v1/admin/flash-sales/{id}/cancel    Cancel a scheduled sale
+PUT    /api/v1/admin/flash-sales/{id}/activate  Start a scheduled sale now
+PUT    /api/v1/admin/flash-sales/{id}/close     Stop claims and return unsold stock
 DELETE /api/v1/admin/flash-sales/{id}           Delete a scheduled or cancelled sale
 ```
 

@@ -4,6 +4,7 @@ import com.e_commerce.kento_shopping.dto.request.admin.FlashSaleRequest;
 import com.e_commerce.kento_shopping.dto.response.FlashSaleResponse;
 import com.e_commerce.kento_shopping.enums.FlashSaleStatus;
 import com.e_commerce.kento_shopping.service.FlashSaleAdminService;
+import com.e_commerce.kento_shopping.service.FlashSaleLifecycleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AdminFlashSaleController {
     private final FlashSaleAdminService flashSaleAdminService;
+    private final FlashSaleLifecycleService flashSaleLifecycleService;
 
     @GetMapping
     @PreAuthorize("hasAuthority('FLASHSALE_READ_ALL')")
@@ -55,6 +57,20 @@ public class AdminFlashSaleController {
     @PreAuthorize("hasAuthority('FLASHSALE_UPDATE')")
     public ResponseEntity<FlashSaleResponse> cancel(@PathVariable Long id){
         return ResponseEntity.ok(flashSaleAdminService.cancel(id));
+    }
+
+    @PutMapping("/{id}/activate")
+    @PreAuthorize("hasAuthority('FLASHSALE_ACTIVATE')")
+    public ResponseEntity<FlashSaleResponse> activate(@PathVariable Long id){
+        flashSaleLifecycleService.activate(id, true);
+        return ResponseEntity.ok(flashSaleAdminService.getById(id));
+    }
+
+    @PutMapping("/{id}/close")
+    @PreAuthorize("hasAuthority('FLASHSALE_ACTIVATE')")
+    public ResponseEntity<FlashSaleResponse> close(@PathVariable Long id){
+        flashSaleLifecycleService.beginClose(id, true);
+        return ResponseEntity.ok(flashSaleAdminService.getById(id));
     }
 
     @DeleteMapping("/{id}")

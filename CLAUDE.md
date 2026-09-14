@@ -17,7 +17,7 @@ Kento Shopping — an e-commerce REST API (Spring Boot 3.5.14, Java 17, MySQL, J
 
 Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 
-Requires a local MySQL database named `kento_shopping`. `ddl-auto: update` — Hibernate manages the schema, there are no migration files.
+Requires a local MySQL database named `kento_shopping` and a Redis on `localhost:6379` (flash-sale stock). `ddl-auto: update` — Hibernate manages the schema, there are no migration files.
 
 ## Configuration
 
