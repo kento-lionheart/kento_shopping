@@ -13,6 +13,7 @@ import com.e_commerce.kento_shopping.exception.ClaimNotFoundException;
 import com.e_commerce.kento_shopping.exception.FlashSaleNotActiveException;
 import com.e_commerce.kento_shopping.exception.FlashSaleNotFoundException;
 import com.e_commerce.kento_shopping.exception.FlashSaleSoldOutException;
+import com.e_commerce.kento_shopping.exception.RateLimitExceededException;
 import com.e_commerce.kento_shopping.exception.ResourceAccessDeniedException;
 import com.e_commerce.kento_shopping.redis.FlashSaleStockStore;
 import com.e_commerce.kento_shopping.repository.FlashSaleRepository;
@@ -37,6 +38,8 @@ public class FlashSaleServiceImpl implements FlashSaleService {
 
     private static final Set<FlashSaleStatus> LIVE_STATUSES =
             EnumSet.of(FlashSaleStatus.ACTIVE, FlashSaleStatus.PAUSED);
+    private static final int RATE_LIMIT = 5;
+    private static final long RATE_WINDOW_MILLIS = 10_000;
 
     private final FlashSaleRepository flashSaleRepository;
     private final FlashSaleStockStore stockStore;
@@ -82,6 +85,9 @@ public class FlashSaleServiceImpl implements FlashSaleService {
     @Override
     public FlashSaleClaimResponse purchase(User user, Long saleId, FlashSalePurchaseRequest request) {
         String claimId = UUID.randomUUID().toString();
+        if (!stockStore.tryAcquire(user.getId(), RATE_LIMIT, RATE_WINDOW_MILLIS, claimId)) {
+            throw new RateLimitExceededException("Too many purchase attempts — please wait a few seconds");
+        }
         int quantity = request.getQuantity();
         long result = stockStore.claim(saleId, user.getId(), claimId, quantity);
         if (result == -1) {

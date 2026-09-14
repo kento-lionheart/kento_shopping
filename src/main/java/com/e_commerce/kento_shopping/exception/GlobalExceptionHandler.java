@@ -170,6 +170,13 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(400, ex.getMessage()));
     }
 
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitExceeded(RateLimitExceededException ex){
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(new ErrorResponse(429, ex.getMessage()));
+    }
+
     @ExceptionHandler(ClaimNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleClaimNotFound(ClaimNotFoundException ex){
         return ResponseEntity

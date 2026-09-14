@@ -18,8 +18,17 @@ public class FlashSaleStockStore {
 
     private static final DefaultRedisScript<Long> CLAIM_SCRIPT = script("redis/flashsale-claim.lua");
     private static final DefaultRedisScript<Long> FINALIZE_SCRIPT = script("redis/flashsale-finalize.lua");
+    private static final DefaultRedisScript<Long> RATE_LIMIT_SCRIPT = script("redis/rate-limit.lua");
 
     private final StringRedisTemplate redis;
+
+    public boolean tryAcquire(Long userId, int limit, long windowMillis, String requestId) {
+        Long result = redis.execute(RATE_LIMIT_SCRIPT,
+                List.of("ratelimit:flashsale:" + userId),
+                String.valueOf(System.currentTimeMillis()), String.valueOf(windowMillis),
+                String.valueOf(limit), requestId);
+        return result != null && result == 1;
+    }
 
     public boolean isProcessing(String claimId) {
         return "PROCESSING".equals(redis.opsForHash().get(claimKey(claimId), "status"));
