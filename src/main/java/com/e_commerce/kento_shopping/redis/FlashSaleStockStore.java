@@ -88,6 +88,14 @@ public class FlashSaleStockStore {
                 .toList();
     }
 
+    public List<Integer> stockAndInflight(Long saleId) {
+        List<String> values = redis.opsForValue().multiGet(List.of(stockKey(saleId), inflightKey(saleId)));
+        if (values == null) {
+            throw new IllegalStateException("Redis returned no reply");
+        }
+        return values.stream().map(v -> v == null ? null : Integer.valueOf(v)).toList();
+    }
+
     public void stopClaims(Long saleId) {
         redis.delete(stockKey(saleId));
     }

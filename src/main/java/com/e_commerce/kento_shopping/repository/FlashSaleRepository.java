@@ -6,6 +6,7 @@ import com.e_commerce.kento_shopping.enums.FlashSaleStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -19,4 +20,7 @@ public interface FlashSaleRepository extends JpaRepository<FlashSale, Long> {
     List<FlashSale> findByStatusInOrderByEndAtAsc(Collection<FlashSaleStatus> statuses);
     List<FlashSale> findByStatusAndStartAtLessThanEqual(FlashSaleStatus status, LocalDateTime now);
     List<FlashSale> findByStatusInAndEndAtLessThanEqual(Collection<FlashSaleStatus> statuses, LocalDateTime now);
+
+    @Query("select coalesce(sum(oi.quantity), 0) from OrderItem oi where oi.order.flashSale.id = :saleId")
+    long sumPersistedUnits(Long saleId);
 }

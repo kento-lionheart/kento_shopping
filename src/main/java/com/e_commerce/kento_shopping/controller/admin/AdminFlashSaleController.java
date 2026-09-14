@@ -5,6 +5,8 @@ import com.e_commerce.kento_shopping.dto.response.FlashSaleResponse;
 import com.e_commerce.kento_shopping.enums.FlashSaleStatus;
 import com.e_commerce.kento_shopping.service.FlashSaleAdminService;
 import com.e_commerce.kento_shopping.service.FlashSaleLifecycleService;
+import com.e_commerce.kento_shopping.service.FlashSaleReconciliationService;
+import com.e_commerce.kento_shopping.dto.response.FlashSaleReconciliationResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminFlashSaleController {
     private final FlashSaleAdminService flashSaleAdminService;
     private final FlashSaleLifecycleService flashSaleLifecycleService;
+    private final FlashSaleReconciliationService flashSaleReconciliationService;
 
     @GetMapping
     @PreAuthorize("hasAuthority('FLASHSALE_READ_ALL')")
@@ -57,6 +60,12 @@ public class AdminFlashSaleController {
     @PreAuthorize("hasAuthority('FLASHSALE_UPDATE')")
     public ResponseEntity<FlashSaleResponse> cancel(@PathVariable Long id){
         return ResponseEntity.ok(flashSaleAdminService.cancel(id));
+    }
+
+    @GetMapping("/{id}/reconciliation")
+    @PreAuthorize("hasAuthority('FLASHSALE_READ_ALL')")
+    public ResponseEntity<FlashSaleReconciliationResponse> reconcile(@PathVariable Long id){
+        return ResponseEntity.ok(flashSaleReconciliationService.check(id));
     }
 
     @PutMapping("/{id}/activate")

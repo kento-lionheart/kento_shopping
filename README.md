@@ -154,6 +154,7 @@ GET    /api/v1/admin/flash-sales/{id}           View one sale
 POST   /api/v1/admin/flash-sales                Schedule a sale for one product
 PUT    /api/v1/admin/flash-sales/{id}           Edit a scheduled sale
 PUT    /api/v1/admin/flash-sales/{id}/cancel    Cancel a scheduled sale
+GET    /api/v1/admin/flash-sales/{id}/reconciliation  Compare Redis stock with persisted orders
 PUT    /api/v1/admin/flash-sales/{id}/activate  Start a scheduled sale now
 PUT    /api/v1/admin/flash-sales/{id}/close     Stop claims and return unsold stock
 DELETE /api/v1/admin/flash-sales/{id}           Delete a scheduled or cancelled sale
