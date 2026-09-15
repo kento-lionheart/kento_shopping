@@ -1,6 +1,7 @@
 -- KEYS[1] stock   KEYS[2] inflight   KEYS[3] claim hash   KEYS[4] claims stream
 -- ARGV[1] quantity   ARGV[2] claimId   ARGV[3] saleId   ARGV[4] userId   ARGV[5] claim TTL seconds
 -- Returns remaining stock, or -1 insufficient, -3 not active, -4 quantity out of range.
+-- Check and decrement stock
 local stock = tonumber(redis.call('GET', KEYS[1]))
 if stock == nil then return -3 end
 local qty = tonumber(ARGV[1])
