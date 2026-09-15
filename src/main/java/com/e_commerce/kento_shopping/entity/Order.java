@@ -66,6 +66,10 @@ public class Order extends BaseEntity{
     @NotNull
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "flash_sale_id")
+    private FlashSale flashSale;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();

@@ -50,6 +50,7 @@ Kento
 | UC-14 | Manage orders and statuses | ✅ Done |
 | UC-15 | Manage roles and permissions | ✅ Done |
 | UC-17 | Review coin top-up requests | ✅ Done |
+| UC-19 | Configure and run a flash sale | ✅ Done (circuit-breaker pause pending) |
 
 ### Coins
 
@@ -122,6 +123,14 @@ GET    /api/v1/wallet/top-ups                   Own top-up requests
 DELETE /api/v1/wallet/top-ups/{id}              Withdraw a pending request
 ```
 
+### Flash sales
+```
+GET    /api/v1/flash-sales                      Live sales with remaining stock (public)
+GET    /api/v1/flash-sales/{id}                 One live sale (public)
+POST   /api/v1/flash-sales/{id}/purchase        Claim 1–3 units — 202 PROCESSING with a claimId (429 above 5 attempts / 10 s, 503 while Redis is down)
+GET    /api/v1/flash-sales/claims/{claimId}     Poll a claim: PROCESSING, PAID or FAILED
+```
+
 ### Admin
 ```
 POST   /api/v1/admin/products                   Create product
@@ -139,6 +148,16 @@ GET    /api/v1/admin/roles                      List roles
 POST   /api/v1/admin/roles                      Compose a new role
 PUT    /api/v1/admin/roles/{id}/permissions     Edit what a role grants
 GET    /api/v1/admin/permissions                The permission catalogue (read-only)
+
+GET    /api/v1/admin/flash-sales                List sales (filter by status)
+GET    /api/v1/admin/flash-sales/{id}           View one sale
+POST   /api/v1/admin/flash-sales                Schedule a sale for one product
+PUT    /api/v1/admin/flash-sales/{id}           Edit a scheduled sale
+PUT    /api/v1/admin/flash-sales/{id}/cancel    Cancel a scheduled sale
+GET    /api/v1/admin/flash-sales/{id}/reconciliation  Compare Redis stock with persisted orders
+PUT    /api/v1/admin/flash-sales/{id}/activate  Start a scheduled sale now
+PUT    /api/v1/admin/flash-sales/{id}/close     Stop claims and return unsold stock
+DELETE /api/v1/admin/flash-sales/{id}           Delete a scheduled or cancelled sale
 ```
 
 Each admin endpoint requires a specific permission, not merely an admin role — see the matrix in the design docs.

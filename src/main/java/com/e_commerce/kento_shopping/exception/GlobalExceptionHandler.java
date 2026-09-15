@@ -135,6 +135,13 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(404, ex.getMessage()));
     }
 
+    @ExceptionHandler(FlashSaleNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleFlashSaleNotFound(FlashSaleNotFoundException ex){
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(404, ex.getMessage()));
+    }
+
     @ExceptionHandler(WalletNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleWalletNotFound(WalletNotFoundException ex){
         return ResponseEntity
@@ -147,6 +154,41 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(new ErrorResponse(403, ex.getMessage()));
+    }
+
+    @ExceptionHandler(FlashSaleSoldOutException.class)
+    public ResponseEntity<ErrorResponse> handleFlashSaleSoldOut(FlashSaleSoldOutException ex){
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(409, ex.getMessage()));
+    }
+
+    @ExceptionHandler(FlashSaleNotActiveException.class)
+    public ResponseEntity<ErrorResponse> handleFlashSaleNotActive(FlashSaleNotActiveException ex){
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(400, ex.getMessage()));
+    }
+
+    @ExceptionHandler(FlashSaleUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleFlashSaleUnavailable(FlashSaleUnavailableException ex){
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(503, ex.getMessage()));
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitExceeded(RateLimitExceededException ex){
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(new ErrorResponse(429, ex.getMessage()));
+    }
+
+    @ExceptionHandler(ClaimNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleClaimNotFound(ClaimNotFoundException ex){
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(404, ex.getMessage()));
     }
 
     @ExceptionHandler(OptimisticLockingFailureException.class)
